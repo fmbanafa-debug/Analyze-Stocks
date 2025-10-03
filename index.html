@@ -31,6 +31,7 @@
             align-items: center;
             justify-content: center;
             z-index: 1000;
+            transition: opacity 0.3s ease;
         }
         .modal-content {
             background-color: white;
@@ -39,9 +40,6 @@
             box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
             width: 90%;
             max-width: 400px;
-        }
-        .icon-btn:hover {
-            opacity: 0.7;
         }
         .loader {
             border: 5px solid #f3f3f3;
@@ -54,6 +52,41 @@
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
+        }
+        /* AI Analyst Chat Styles */
+        #chatHistory {
+            height: 300px;
+            overflow-y: auto;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+        .chat-message {
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            margin-bottom: 0.75rem;
+            max-width: 85%;
+            word-wrap: break-word;
+            line-height: 1.5;
+        }
+        .user-message {
+            background-color: #dbeafe; /* blue-100 */
+            margin-left: auto;
+            text-align: right;
+        }
+        .ai-message {
+            background-color: #f3f4f6; /* gray-100 */
+            margin-right: auto;
+            text-align: left;
+        }
+         .ai-message strong { font-weight: 600; }
+         .ai-message ul { list-style-type: disc; padding-left: 20px; margin-top: 8px; }
+         .ai-message br { content: ""; display: block; margin-bottom: 0.5em; }
+         /* Drag and Drop style */
+        .drag-over {
+            border: 2px dashed #ffffff;
+            opacity: 0.8;
         }
     </style>
 </head>
@@ -71,7 +104,7 @@
 
         <div class="flex flex-col md:flex-row gap-4 mb-4">
             <input type="text" id="searchInput" placeholder="Search by stock symbol or name..." class="flex-grow p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
-            <label for="screenshotUpload" class="bg-green-600 text-white font-semibold py-3 px-6 rounded-lg shadow-md hover:bg-green-700 transition flex items-center justify-center cursor-pointer">
+            <label for="screenshotUpload" id="screenshotLabel" class="bg-green-600 text-white font-semibold py-3 px-6 rounded-lg shadow-md hover:bg-green-700 transition-all flex items-center justify-center cursor-pointer">
                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
                 Add from Screenshot
             </label>
@@ -88,12 +121,7 @@
     </div>
 
     <!-- Modals -->
-    <div id="loadingModal" class="modal-overlay hidden">
-        <div class="modal-content text-center">
-            <div class="loader mx-auto"></div>
-            <p class="mt-4 text-gray-700 font-semibold">AI is analyzing your screenshot...</p>
-        </div>
-    </div>
+    <div id="loadingModal" class="modal-overlay hidden"><div class="modal-content text-center"><div class="loader mx-auto"></div><p class="mt-4 text-gray-700 font-semibold">AI is analyzing...</p></div></div>
 
     <div id="editModal" class="modal-overlay hidden">
         <div class="modal-content">
@@ -154,9 +182,30 @@
         </div>
     </div>
 
+    <!-- AI Analyst Modal -->
+    <div id="analystModal" class="modal-overlay hidden">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold">AI Analyst: <span id="analystStockSymbol"></span></h2>
+                <button id="closeAnalystBtn" class="text-2xl font-bold text-gray-500 hover:text-gray-800">&times;</button>
+            </div>
+            <div id="chatHistory">
+                 <div class="ai-message chat-message">Hello! I'm your AI Analyst. How can I help you research this stock? Ask about recent news, competitors, or risks.</div>
+            </div>
+             <div id="analystLoading" class="hidden text-center p-4">
+                <div class="loader mx-auto"></div>
+                <p class="text-sm text-gray-600 mt-2">Searching for the latest information...</p>
+            </div>
+            <form id="analystForm" class="flex gap-2">
+                <input type="text" id="analystInput" placeholder="e.g., Summarize the latest earnings..." class="flex-grow p-2 border border-gray-300 rounded-md shadow-sm">
+                <button type="submit" class="bg-green-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-green-700">Ask</button>
+            </form>
+        </div>
+    </div>
 
     <script>
     document.addEventListener('DOMContentLoaded', () => {
+        // Core elements
         const canvas = document.getElementById('stockCanvas');
         const ctx = canvas.getContext('2d');
         const searchInput = document.getElementById('searchInput');
@@ -165,6 +214,7 @@
         // Modal Elements
         const addStockBtn = document.getElementById('addStockBtn');
         const screenshotUploadInput = document.getElementById('screenshotUpload');
+        const screenshotLabel = document.getElementById('screenshotLabel');
         const loadingModal = document.getElementById('loadingModal');
         const addModal = document.getElementById('addModal');
         const editModal = document.getElementById('editModal');
@@ -176,22 +226,30 @@
         const addForm = document.getElementById('addForm');
         const editForm = document.getElementById('editForm');
         
+        // Analyst Modal Elements
+        const analystModal = document.getElementById('analystModal');
+        const closeAnalystBtn = document.getElementById('closeAnalystBtn');
+        const analystForm = document.getElementById('analystForm');
+        const analystInput = document.getElementById('analystInput');
+        const chatHistory = document.getElementById('chatHistory');
+        const analystStockSymbol = document.getElementById('analystStockSymbol');
+        const analystLoading = document.getElementById('analystLoading');
+
         let editingStockIndex = null;
         let deletingStockIndex = null;
+        let analyzingStock = null;
 
         // --- Data Persistence Setup ---
         const stockDataKey = 'aiStockWatchlistData';
         let stocks = [];
 
-        // Function to save stocks to localStorage
         function saveStocks() {
             localStorage.setItem(stockDataKey, JSON.stringify(stocks));
         }
 
-        // Function to load stocks from localStorage or use defaults
         function loadStocks() {
             const savedStocks = localStorage.getItem(stockDataKey);
-            if (savedStocks && savedStocks.length > 2) { // Check for more than just '[]'
+            if (savedStocks && savedStocks.length > 2) {
                 stocks = JSON.parse(savedStocks);
             } else {
                 // Default list if nothing is saved
@@ -201,78 +259,53 @@
                     { symbol: 'ACAD', name: 'ACADIA Pharmaceuticals Inc.', price: 24.42, change: -0.34, changePercent: '-1.35%' },
                     { symbol: 'ACB', name: 'Aurora Cannabis Inc.', price: 5.09, change: -0.09, changePercent: '-1.74%' },
                     { symbol: 'ACHR', name: 'Archer Aviation Inc.', price: 9.86, change: 0.61, changePercent: '+6.59%' },
-                    { symbol: 'ACLX', name: 'Arcellx Inc.', price: 77.86, change: -2.12, changePercent: '-2.65%' },
-                    { symbol: 'ADAP', name: 'Adaptimmune Therapeutics plc', price: 0.14, change: -0.02, changePercent: '-9.75%' },
-                    { symbol: 'ADV', name: 'Advantage Solutions Inc.', price: 1.77, change: -0.12, changePercent: '-6.35%' },
-                    { symbol: 'AGAE', name: 'Allied Gaming & Entertainment Inc.', price: 1.05, change: 0.04, changePercent: '+3.96%' },
-                    { symbol: 'AGEN', name: 'Agenus Inc.', price: 4.38, change: -0.17, changePercent: '-3.74%' },
-                    { symbol: 'AGL', name: 'agilon health inc.', price: 1.16, change: -0.01, changePercent: '-0.85%' },
-                    { symbol: 'AGNC', name: 'AGNC Investment Corp.', price: 9.97, change: -0.13, changePercent: '-1.29%' },
                     { symbol: 'AI', name: 'C3.ai Inc.', price: 17.90, change: -0.12, changePercent: '-0.67%' },
-                    // ... (rest of the default stocks)
-                    { symbol: 'ZYME', name: 'Zymeworks Inc.', price: 16.25, change: -0.24, changePercent: '-1.46%' }
+                    { symbol: 'AMC', name: 'AMC Entertainment Holdings Inc.', price: 3.01, change: 0.17, changePercent: '+5.99%' },
+                    { symbol: 'ARM', name: 'Arm Holdings plc', price: 142.91, change: -3.63, changePercent: '-2.48%' },
+                    { symbol: 'GME', name: 'GameStop Corp.', price: 26.08, change: 0.20, changePercent: '+0.77%' },
+                    { symbol: 'HOOD', name: 'Robinhood Markets Inc.', price: 124.78, change: 3.87, changePercent: '+3.20%' },
+                    { symbol: 'IONQ', name: 'IonQ Inc.', price: 70.41, change: 3.60, changePercent: '+5.39%' },
+                    { symbol: 'LCID', name: 'Lucid Group Inc.', price: 21.10, change: 0.60, changePercent: '+2.93%' },
+                    { symbol: 'PLTR', name: 'Palantir Technologies Inc.', price: 182.39, change: 5.42, changePercent: '+3.06%' },
+                    { symbol: 'RIVN', name: 'Rivian Automotive Inc.', price: 14.38, change: -0.30, changePercent: '-2.04%' },
+                    { symbol: 'SOFI', name: 'SoFi Technologies Inc.', price: 29.51, change: 1.40, changePercent: '+4.98%' },
+                    { symbol: 'SOUN', name: 'SoundHound AI Inc.', price: 16.25, change: 0.62, changePercent: '+3.97%' },
+                    { symbol: 'U', name: 'Unity Software Inc.', price: 46.05, change: 0.60, changePercent: '+1.32%' }
                 ];
             }
         }
         
-        // --- Gemini AI Function ---
+        // --- Gemini AI Functions ---
         async function extractStockInfoFromImage(base64ImageData) {
+            loadingModal.querySelector('p').textContent = 'AI is analyzing your screenshot...';
             loadingModal.classList.remove('hidden');
             
-            const apiKey = ""; // Canvas will provide this
+            const apiKey = "";
             const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
 
-            const prompt = `Analyze the provided screenshot of a stock ticker or financial website. Identify and extract the primary stock symbol, the company name, and its current price. Return the data as a single, clean JSON object with the keys: "symbol", "name", and "price". The price should be a number, not a string. If you cannot find a piece of information, use null for its value.`;
+            const prompt = `Analyze the provided screenshot of a stock ticker or financial website. Extract the stock symbol, company name, and current price. Return a single JSON object with keys: "symbol", "name", and "price". Price should be a number. Use null for missing values.`;
 
             const payload = {
-                contents: [{
-                    parts: [
-                        { text: prompt },
-                        {
-                            inlineData: {
-                                mimeType: "image/png",
-                                data: base64ImageData
-                            }
-                        }
-                    ]
-                }],
+                contents: [{ parts: [ { text: prompt }, { inlineData: { mimeType: "image/png", data: base64ImageData } } ] }],
                 generationConfig: {
                     responseMimeType: "application/json",
-                    responseSchema: {
-                      type: "OBJECT",
-                      properties: {
-                        "symbol": { "type": "STRING" },
-                        "name":   { "type": "STRING" },
-                        "price":  { "type": "NUMBER" }
-                      }
-                    }
+                    responseSchema: { type: "OBJECT", properties: { "symbol": { "type": "STRING" }, "name": { "type": "STRING" }, "price": { "type": "NUMBER" } } }
                 }
             };
             
             try {
-                const response = await fetch(apiUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-
-                if (!response.ok) {
-                    throw new Error(`API call failed with status: ${response.status}`);
-                }
-
+                const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                if (!response.ok) throw new Error(`API error: ${response.status}`);
                 const result = await response.json();
                 
-                if (result.candidates && result.candidates.length > 0 && result.candidates[0].content?.parts?.[0]?.text) {
-                    const jsonText = result.candidates[0].content.parts[0].text;
-                    const data = JSON.parse(jsonText);
-                    
+                if (result.candidates?.[0]?.content?.parts?.[0]?.text) {
+                    const data = JSON.parse(result.candidates[0].content.parts[0].text);
                     document.getElementById('addSymbol').value = data.symbol?.toUpperCase() || '';
                     document.getElementById('addName').value = data.name || '';
                     document.getElementById('addPrice').value = data.price || '';
                     addModal.classList.remove('hidden');
-
                 } else {
-                    throw new Error("Could not extract stock information. Please try another screenshot.");
+                    throw new Error("Could not extract stock information.");
                 }
 
             } catch (error) {
@@ -282,30 +315,106 @@
                 loadingModal.classList.add('hidden');
             }
         }
+        
+        async function getAIAnalysis(stock, query) {
+            analystLoading.classList.remove('hidden');
+            analystForm.classList.add('hidden');
 
+            const apiKey = "";
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+
+            const systemPrompt = "You are a world-class financial analyst named 'Gem'. Provide concise, insightful, easy-to-understand analysis on stocks using real-time search data. Format answers with markdown (bolding, bullet points). Start with a brief, friendly greeting.";
+            const userQuery = `Analyze the stock for ${stock.name} (${stock.symbol}) and answer: "${query}"`;
+
+            const payload = {
+                contents: [{ parts: [{ text: userQuery }] }],
+                tools: [{ "google_search": {} }],
+                systemInstruction: { parts: [{ text: systemPrompt }] },
+            };
+
+            try {
+                const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                if (!response.ok) throw new Error(`API call failed: ${response.statusText}`);
+                const result = await response.json();
+                const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
+                appendMessage(text || "I'm sorry, I couldn't find a clear answer for that. Please try another question.", 'ai');
+            } catch (error) {
+                console.error('Error during AI analysis:', error);
+                appendMessage(`There was an error: ${error.message}`, 'ai');
+            } finally {
+                analystLoading.classList.add('hidden');
+                analystForm.classList.remove('hidden');
+                chatHistory.scrollTop = chatHistory.scrollHeight;
+            }
+        }
+
+        function appendMessage(text, sender) {
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('chat-message', `${sender}-message`);
+            let html = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            html = html.replace(/\* (.*?)(?=\n\* |\n\n|$)/g, '<li>$1</li>');
+            html = html.replace(/(\r\n|\n|\r)/g, "<br>");
+            html = html.replace(/(<li>.*<\/li>)/g, '<ul>$1</ul>');
+            html = html.replace(/<\/ul><br><ul>/g, '');
+            messageDiv.innerHTML = html;
+            chatHistory.appendChild(messageDiv);
+        }
+
+        // --- File Handling for Screenshot ---
+        function handleImageFile(file) {
+             if (file && file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                    extractStockInfoFromImage(reader.result.replace('data:', '').replace(/^.+,/, ''));
+                };
+                reader.readAsDataURL(file);
+            }
+        }
 
         // --- Event Listeners ---
         screenshotUploadInput.addEventListener('change', (event) => {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                const base64String = reader.result.replace('data:', '').replace(/^.+,/, '');
-                extractStockInfoFromImage(base64String);
-            };
-            reader.readAsDataURL(file);
-
-            event.target.value = '';
+            handleImageFile(event.target.files[0]);
+            event.target.value = ''; // Reset for same-file uploads
+        });
+        
+        // Drag and Drop Listeners
+        screenshotLabel.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            screenshotLabel.classList.add('drag-over');
+        });
+         screenshotLabel.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            screenshotLabel.classList.remove('drag-over');
+        });
+        screenshotLabel.addEventListener('drop', (e) => {
+            e.preventDefault();
+            screenshotLabel.classList.remove('drag-over');
+            if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                handleImageFile(e.dataTransfer.files[0]);
+                e.dataTransfer.clearData();
+            }
         });
 
-        let filteredStocks = [];
-        let sortColumn = 'symbol';
-        let sortDirection = 'asc';
-        let scrollY = 0;
-        
-        const rowHeight = 40;
-        const headerHeight = 50;
+
+        analystForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const query = analystInput.value.trim();
+            if (query && analyzingStock) {
+                appendMessage(query, 'user');
+                getAIAnalysis(analyzingStock, query);
+                analystInput.value = '';
+                chatHistory.scrollTop = chatHistory.scrollHeight;
+            }
+        });
+
+        closeAnalystBtn.addEventListener('click', () => {
+            analystModal.classList.add('hidden');
+            analyzingStock = null;
+        });
+
+        // --- Canvas Drawing and Interaction ---
+        let filteredStocks = [], sortColumn = 'symbol', sortDirection = 'asc', scrollY = 0;
+        const rowHeight = 40, headerHeight = 50;
 
         function resizeCanvas() {
             const container = canvas.parentElement;
@@ -316,29 +425,17 @@
 
         function filterAndSort() {
             const searchTerm = searchInput.value.toLowerCase();
-            filteredStocks = stocks.filter(stock =>
-                stock.symbol.toLowerCase().includes(searchTerm) ||
-                stock.name.toLowerCase().includes(searchTerm)
-            );
-
+            filteredStocks = stocks.filter(s => s.symbol.toLowerCase().includes(searchTerm) || s.name.toLowerCase().includes(searchTerm));
             filteredStocks.sort((a, b) => {
-                let valA = a[sortColumn];
-                let valB = b[sortColumn];
-
-                if(sortColumn === 'price' || sortColumn === 'change') {
+                let valA = a[sortColumn], valB = b[sortColumn];
+                if (['price', 'change'].includes(sortColumn)) {
                     valA = (typeof valA === 'number') ? valA : -Infinity;
                     valB = (typeof valB === 'number') ? valB : -Infinity;
                 }
-
-                let comparison = 0;
-                if (valA > valB) {
-                    comparison = 1;
-                } else if (valA < valB) {
-                    comparison = -1;
-                }
-                return sortDirection === 'asc' ? comparison : comparison * -1;
+                if (valA > valB) return sortDirection === 'asc' ? 1 : -1;
+                if (valA < valB) return sortDirection === 'asc' ? -1 : 1;
+                return 0;
             });
-
             scrollY = 0;
             draw();
         }
@@ -359,24 +456,18 @@
         ];
 
         function drawHeader() {
-            ctx.fillStyle = '#374151'; 
+            ctx.fillStyle = '#374151';
             ctx.fillRect(0, 0, canvas.width, headerHeight);
-
             ctx.font = 'bold 14px Inter';
             ctx.fillStyle = 'white';
             ctx.textBaseline = 'middle';
-
             let x = 0;
             columns.forEach(col => {
                 const colWidth = canvas.width * col.width;
                 let text = col.name;
-                if (col.key === sortColumn) {
-                    text += sortDirection === 'asc' ? ' ▲' : ' ▼';
-                }
-                
+                if (col.key === sortColumn) text += sortDirection === 'asc' ? ' ▲' : ' ▼';
+                let textX = (col.align === 'left') ? x + 10 : x + colWidth / 2;
                 ctx.textAlign = col.align;
-                let textX = (col.align === 'left') ? x + 10 : (col.key === 'actions') ? x + colWidth / 2 : x + colWidth / 2;
-                
                 ctx.fillText(text, textX, headerHeight / 2);
                 x += colWidth;
             });
@@ -385,102 +476,58 @@
         function drawRows() {
             const startIndex = Math.floor(scrollY / rowHeight);
             const endIndex = Math.min(startIndex + Math.ceil(canvas.height / rowHeight) + 1, filteredStocks.length);
-            const editIcon = '\u270E'; 
-            const deleteIcon = '\uD83D\uDDD1';
+            const analyzeIcon = '💡', editIcon = '\u270E', deleteIcon = '\uD83D\uDDD1';
 
             for (let i = startIndex; i < endIndex; i++) {
                 const stock = filteredStocks[i];
                 if (!stock) continue;
                 const y = headerHeight + i * rowHeight - scrollY;
-
-                ctx.fillStyle = i % 2 === 0 ? '#F9FAFB' : 'white'; 
+                ctx.fillStyle = i % 2 === 0 ? '#F9FAFB' : 'white';
                 ctx.fillRect(0, y, canvas.width, rowHeight);
-                
                 let x = 0;
                 columns.forEach(col => {
                     const colWidth = canvas.width * col.width;
-                    ctx.textAlign = col.align;
-                    
+                     ctx.textAlign = col.align;
                     if (col.key === 'actions') {
                         ctx.font = '20px Inter';
                         const iconY = y + rowHeight / 2;
-                        
-                        const editX = x + colWidth / 2 - 20;
-                        ctx.fillStyle = '#3B82F6';
-                        ctx.fillText(editIcon, editX, iconY);
-
-                        const deleteX = x + colWidth / 2 + 20;
-                        ctx.fillStyle = '#EF4444';
-                        ctx.fillText(deleteIcon, deleteX, iconY);
-
+                        ctx.fillStyle = '#F59E0B'; ctx.fillText(analyzeIcon, x + colWidth / 2 - 35, iconY);
+                        ctx.fillStyle = '#3B82F6'; ctx.fillText(editIcon, x + colWidth / 2, iconY);
+                        ctx.fillStyle = '#EF4444'; ctx.fillText(deleteIcon, x + colWidth / 2 + 35, iconY);
                     } else {
-                        let textX = (col.align === 'left') ? x + 10 : x + colWidth / 2;
-                        let value = stock[col.key];
-                        let color = '#111827';
-                        let font = '14px Inter';
-                        
-                        if (col.key === 'symbol') {
-                             font = '500 14px Inter';
-                             color = '#3B82F6';
-                        }
-                        if(col.key === 'price') font = '500 14px Inter';
-
+                        let value = stock[col.key], color = '#111827', font = '14px Inter';
+                        if (col.key === 'symbol') { font = '500 14px Inter'; color = '#3B82F6'; }
+                        if (col.key === 'price') font = '500 14px Inter';
                         if (typeof value === 'number') {
-                             if(col.key === 'change') {
-                                color = value >= 0 ? '#10B981' : '#EF4444';
-                             }
-                             value = value.toFixed(2);
+                            if (col.key === 'change') color = value >= 0 ? '#10B981' : '#EF4444';
+                            value = value.toFixed(2);
                         }
-                         if(col.key === 'changePercent' && typeof stock.change === 'number') {
-                             color = stock.change >= 0 ? '#10B981' : '#EF4444';
+                        if (col.key === 'changePercent' && typeof stock.change === 'number') {
+                            color = stock.change >= 0 ? '#10B981' : '#EF4444';
                         }
-                        
-                        ctx.font = font;
-                        ctx.fillStyle = color;
+                        ctx.font = font; ctx.fillStyle = color;
+                        let textX = (col.align === 'left') ? x + 10 : x + colWidth / 2;
                         ctx.fillText(String(value), textX, y + rowHeight / 2);
-
-                        if (col.key === 'symbol') {
-                            ctx.beginPath();
-                            ctx.moveTo(textX, y + rowHeight / 2 + 8);
-                            ctx.lineTo(textX + ctx.measureText(String(value)).width, y + rowHeight / 2 + 8);
-                            ctx.strokeStyle = color;
-                            ctx.lineWidth = 1;
-                            ctx.stroke();
-                        }
                     }
-
                     x += colWidth;
                 });
             }
         }
         
-        function getActionFromClick(x, y) {
-            const actionsCol = columns.find(c => c.key === 'actions');
-            if (!actionsCol) return null;
-
+        function getActionFromClick(x) {
             let actionsX = 0;
-            for(const col of columns){
-                if(col.key === 'actions') break;
-                actionsX += col.width * canvas.width;
-            }
-
-            const actionsWidth = actionsCol.width * canvas.width;
-            
-            if(x >= actionsX && x <= actionsX + actionsWidth) {
-                 const editXStart = actionsX + actionsWidth / 2 - 30;
-                 const editXEnd = actionsX + actionsWidth / 2 - 10;
-                 const deleteXStart = actionsX + actionsWidth / 2 + 10;
-                 const deleteXEnd = actionsX + actionsWidth / 2 + 30;
-                 
-                 if (x >= editXStart && x <= editXEnd) return 'edit';
-                 if (x >= deleteXStart && x <= deleteXEnd) return 'delete';
+            columns.forEach(c => { if(c.key !== 'actions') actionsX += c.width * canvas.width; });
+            const actionsWidth = columns.find(c => c.key === 'actions').width * canvas.width;
+            if (x >= actionsX && x <= actionsX + actionsWidth) {
+                 if (x < actionsX + actionsWidth / 3) return 'analyze';
+                 if (x < actionsX + (actionsWidth * 2) / 3) return 'edit';
+                 return 'delete';
             }
             return null;
         }
 
         window.addEventListener('resize', resizeCanvas);
         searchInput.addEventListener('input', filterAndSort);
-
         canvas.addEventListener('wheel', e => {
             e.preventDefault();
             scrollY += e.deltaY;
@@ -490,17 +537,15 @@
         });
 
         canvas.addEventListener('click', e => {
-            const rect = canvas.getBoundingClientRect();
-            const y = e.clientY - rect.top;
-            const x = e.clientX - rect.left;
+            const rect = canvas.getBoundingClientRect(), y = e.clientY - rect.top, x = e.clientX - rect.left;
             
-            if (y <= headerHeight) { 
+            if (y <= headerHeight) { // header click for sorting
                 let currentX = 0;
-                for(const col of columns) {
-                    currentX += col.width * canvas.width;
-                    if(x < currentX) {
-                        if (col.key !== 'actions' && col.key) { 
-                             if (sortColumn === col.key) {
+                for (const col of columns) {
+                    const colWidth = canvas.width * col.width;
+                    if (x >= currentX && x < currentX + colWidth) {
+                        if (col.key && col.key !== 'actions') {
+                            if (sortColumn === col.key) {
                                 sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
                             } else {
                                 sortColumn = col.key;
@@ -510,44 +555,50 @@
                         }
                         break;
                     }
+                    currentX += colWidth;
                 }
-            } else { 
-                 const rowIndex = Math.floor((scrollY + y - headerHeight) / rowHeight);
-                 const stock = filteredStocks[rowIndex];
-                 if(!stock) return;
+                return; 
+            }
+            
+            const rowIndex = Math.floor((scrollY + y - headerHeight) / rowHeight);
+            const stock = filteredStocks[rowIndex];
+            if (!stock) return;
+            const originalIndex = stocks.findIndex(s => s.symbol === stock.symbol);
+            const action = getActionFromClick(x);
 
-                 const action = getActionFromClick(x, y);
-                 const originalIndex = stocks.findIndex(s => s.symbol === stock.symbol);
+            if (action === 'analyze') {
+                analyzingStock = stock;
+                analystStockSymbol.textContent = stock.symbol;
+                chatHistory.innerHTML = '<div class="ai-message chat-message">Hello! I\'m your AI Analyst. How can I help you research this stock?</div>';
+                analystModal.classList.remove('hidden');
+            } else if (action === 'edit') {
+                editingStockIndex = originalIndex;
+                document.getElementById('editSymbol').value = stock.symbol;
+                document.getElementById('editName').value = stock.name;
+                document.getElementById('editPrice').value = stock.price;
+                editModal.classList.remove('hidden');
+            } else if (action === 'delete') {
+                deletingStockIndex = originalIndex;
+                document.getElementById('deleteStockSymbol').textContent = stock.symbol;
+                deleteModal.classList.remove('hidden');
+            } else { // Hyperlink logic
+                 const symbolColWidth = canvas.width * columns[0].width;
+                 if (x <= symbolColWidth) {
+                    let symbol = stock.symbol;
+                    let url;
 
-                 if (action === 'edit') {
-                     editingStockIndex = originalIndex;
-                     document.getElementById('editSymbol').value = stock.symbol;
-                     document.getElementById('editName').value = stock.name;
-                     document.getElementById('editPrice').value = stock.price;
-                     editModal.classList.remove('hidden');
-                 } else if (action === 'delete') {
-                     deletingStockIndex = originalIndex;
-                     document.getElementById('deleteStockSymbol').textContent = stock.symbol;
-                     deleteModal.classList.remove('hidden');
-                 } else { 
-                     const symbolColWidth = canvas.width * columns[0].width;
-                     if (x <= symbolColWidth) {
-                        let symbol = stock.symbol;
-                        let url;
-
-                        if (symbol.includes('-USD')) {
-                            url = `https://www.google.com/finance/quote/${symbol}`;
-                        } else if (symbol.includes(':')) {
-                            const [ticker, exchangeCode] = symbol.split(':');
-                            const exchange = exchangeCode === 'CA' ? 'TSE' : exchangeCode; 
-                            url = `https://www.google.com/finance/quote/${ticker}:${exchange}`;
-                        } else {
-                            const exchange = (symbol.length <= 3 || symbol.includes('.')) ? 'NYSE' : 'NASDAQ';
-                            url = `https://www.google.com/finance/quote/${symbol}:${exchange}`;
-                        }
-                        window.open(url, '_blank');
-                     }
-                }
+                    if (symbol.includes('-USD')) {
+                        url = `https://www.google.com/finance/quote/${symbol}`;
+                    } else if (symbol.includes(':')) {
+                        const [ticker, exchangeCode] = symbol.split(':');
+                        const exchange = exchangeCode === 'CA' ? 'TSE' : exchangeCode; 
+                        url = `https://www.google.com/finance/quote/${ticker}:${exchange}`;
+                    } else {
+                        const exchange = (symbol.length <= 3 || symbol.includes('.')) ? 'NYSE' : 'NASDAQ';
+                        url = `https://www.google.com/finance/quote/${symbol}:${exchange}`;
+                    }
+                    window.open(url, '_blank');
+                 }
             }
         });
 
@@ -561,10 +612,9 @@
             const symbol = document.getElementById('addSymbol').value.toUpperCase();
             const name = document.getElementById('addName').value;
             const price = parseFloat(document.getElementById('addPrice').value);
-            
             if (symbol && name && !isNaN(price)) {
                 stocks.unshift({ symbol, name, price, change: 0, changePercent: '0.00%' });
-                saveStocks(); // <-- Save changes
+                saveStocks();
                 addModal.classList.add('hidden');
                 addForm.reset();
                 filterAndSort(); 
@@ -575,19 +625,16 @@
             e.preventDefault();
             if (editingStockIndex !== null) {
                 const stockToEdit = stocks[editingStockIndex];
-                if(stockToEdit) {
+                if (stockToEdit) {
                     const newPrice = parseFloat(document.getElementById('editPrice').value);
                     const originalPrice = stockToEdit.price;
                     if (typeof originalPrice === 'number' && !isNaN(originalPrice) && originalPrice !== 0) {
-                        const change = newPrice - originalPrice;
-                        const changePercent = ((change / originalPrice) * 100).toFixed(2) + '%';
-                        stockToEdit.change = change;
-                        stockToEdit.changePercent = changePercent;
+                        stockToEdit.change = newPrice - originalPrice;
+                        stockToEdit.changePercent = ((stockToEdit.change / originalPrice) * 100).toFixed(2) + '%';
                     }
-                     stockToEdit.price = newPrice;
-                     saveStocks(); // <-- Save changes
+                    stockToEdit.price = newPrice;
+                    saveStocks();
                 }
-                
                 editModal.classList.add('hidden');
                 editingStockIndex = null;
                 draw();
@@ -597,7 +644,7 @@
         confirmDeleteBtn.addEventListener('click', () => {
              if (deletingStockIndex !== null) {
                 stocks.splice(deletingStockIndex, 1);
-                saveStocks(); // <-- Save changes
+                saveStocks();
                 deleteModal.classList.add('hidden');
                 deletingStockIndex = null;
                 filterAndSort(); 
@@ -605,9 +652,8 @@
         });
 
         // --- Initial App Start ---
-        loadStocks(); // Load data on start
-        const now = new Date();
-        lastUpdatedContainer.textContent = `Prices as of: ${now.toLocaleDateString()}`;
+        loadStocks();
+        lastUpdatedContainer.textContent = `Prices as of: ${new Date().toLocaleDateString()}`;
         filterAndSort();
         resizeCanvas();
     });
