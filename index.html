@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Stock Watchlist</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5;
+        }
+        .canvas-container {
+            width: 100%;
+            height: 75vh;
+            border-radius: 0.75rem;
+            overflow: hidden;
+            background-color: white;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            cursor: pointer;
+        }
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+            width: 90%;
+            max-width: 400px;
+        }
+        .icon-btn:hover {
+            opacity: 0.7;
+        }
+        .loader {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #3498db;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+    <div class="max-w-7xl mx-auto">
+        <header class="text-center mb-6">
+            <h1 class="text-3xl font-bold text-gray-800 flex items-center justify-center">
+                <svg class="w-8 h-8 mr-3 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
+                AI Stock Watchlist
+            </h1>
+        </header>
+
+        <div id="last-updated-container" class="text-center text-sm text-gray-500 mb-4"></div>
+
+        <div class="flex flex-col md:flex-row gap-4 mb-4">
+            <input type="text" id="searchInput" placeholder="Search by stock symbol or name..." class="flex-grow p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+            <label for="screenshotUpload" class="bg-green-600 text-white font-semibold py-3 px-6 rounded-lg shadow-md hover:bg-green-700 transition flex items-center justify-center cursor-pointer">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                Add from Screenshot
+            </label>
+            <input type="file" id="screenshotUpload" class="hidden" accept="image/*">
+            <button id="addStockBtn" class="bg-blue-600 text-white font-semibold py-3 px-6 rounded-lg shadow-md hover:bg-blue-700 transition flex items-center justify-center">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+                Add Manually
+            </button>
+        </div>
+
+        <div class="canvas-container">
+            <canvas id="stockCanvas"></canvas>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div id="loadingModal" class="modal-overlay hidden">
+        <div class="modal-content text-center">
+            <div class="loader mx-auto"></div>
+            <p class="mt-4 text-gray-700 font-semibold">AI is analyzing your screenshot...</p>
+        </div>
+    </div>
+
+    <div id="editModal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <h2 class="text-xl font-bold mb-4">Edit Stock</h2>
+            <form id="editForm">
+                <div class="mb-4">
+                    <label for="editSymbol" class="block text-sm font-medium text-gray-700">Symbol</label>
+                    <input type="text" id="editSymbol" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm" readonly>
+                </div>
+                <div class="mb-4">
+                    <label for="editName" class="block text-sm font-medium text-gray-700">Name</label>
+                    <input type="text" id="editName" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm" readonly>
+                </div>
+                <div class="mb-4">
+                    <label for="editPrice" class="block text-sm font-medium text-gray-700">Price</label>
+                    <input type="number" step="0.01" id="editPrice" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm" required>
+                </div>
+                <div class="flex justify-end gap-3 mt-6">
+                    <button type="button" id="cancelEditBtn" class="bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300">Cancel</button>
+                    <button type="submit" class="bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-700">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="addModal" class="modal-overlay hidden">
+         <div class="modal-content">
+            <h2 class="text-xl font-bold mb-4">Add New Stock</h2>
+            <form id="addForm">
+                <div class="mb-4">
+                    <label for="addSymbol" class="block text-sm font-medium text-gray-700">Symbol</label>
+                    <input type="text" id="addSymbol" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm" required>
+                </div>
+                <div class="mb-4">
+                    <label for="addName" class="block text-sm font-medium text-gray-700">Name</label>
+                    <input type="text" id="addName" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm" required>
+                </div>
+                <div class="mb-4">
+                    <label for="addPrice" class="block text-sm font-medium text-gray-700">Price</label>
+                    <input type="number" step="0.01" id="addPrice" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm" required>
+                </div>
+                <div class="flex justify-end gap-3 mt-6">
+                    <button type="button" id="cancelAddBtn" class="bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300">Cancel</button>
+                    <button type="submit" class="bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-700">Add</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <div id="deleteModal" class="modal-overlay hidden">
+        <div class="modal-content text-center">
+            <h2 class="text-xl font-bold mb-4">Confirm Deletion</h2>
+            <p class="text-gray-600 mb-6">Are you sure you want to delete <span id="deleteStockSymbol" class="font-semibold"></span>?</p>
+            <div class="flex justify-center gap-4">
+                <button id="cancelDeleteBtn" class="bg-gray-200 text-gray-800 font-semibold py-2 px-6 rounded-lg hover:bg-gray-300">Cancel</button>
+                <button id="confirmDeleteBtn" class="bg-red-600 text-white font-semibold py-2 px-6 rounded-lg hover:bg-red-700">Delete</button>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const canvas = document.getElementById('stockCanvas');
+        const ctx = canvas.getContext('2d');
+        const searchInput = document.getElementById('searchInput');
+        const lastUpdatedContainer = document.getElementById('last-updated-container');
+
+        // Modal Elements
+        const addStockBtn = document.getElementById('addStockBtn');
+        const screenshotUploadInput = document.getElementById('screenshotUpload');
+        const loadingModal = document.getElementById('loadingModal');
+        const addModal = document.getElementById('addModal');
+        const editModal = document.getElementById('editModal');
+        const deleteModal = document.getElementById('deleteModal');
+        const cancelAddBtn = document.getElementById('cancelAddBtn');
+        const cancelEditBtn = document.getElementById('cancelEditBtn');
+        const cancelDeleteBtn = document.getElementById('cancelDeleteBtn');
+        const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+        const addForm = document.getElementById('addForm');
+        const editForm = document.getElementById('editForm');
+        
+        let editingStockIndex = null;
+        let deletingStockIndex = null;
+
+        // --- Data Persistence Setup ---
+        const stockDataKey = 'aiStockWatchlistData';
+        let stocks = [];
+
+        // Function to save stocks to localStorage
+        function saveStocks() {
+            localStorage.setItem(stockDataKey, JSON.stringify(stocks));
+        }
+
+        // Function to load stocks from localStorage or use defaults
+        function loadStocks() {
+            const savedStocks = localStorage.getItem(stockDataKey);
+            if (savedStocks && savedStocks.length > 2) { // Check for more than just '[]'
+                stocks = JSON.parse(savedStocks);
+            } else {
+                // Default list if nothing is saved
+                stocks = [
+                    { symbol: 'ABEO', name: 'Abeona Therapeutics Inc.', price: 5.38, change: -0.26, changePercent: '-4.61%' },
+                    { symbol: 'ABVX', name: 'ABVC BioPharma Inc.', price: 82.30, change: -1.01, changePercent: '-1.21%' },
+                    { symbol: 'ACAD', name: 'ACADIA Pharmaceuticals Inc.', price: 24.42, change: -0.34, changePercent: '-1.35%' },
+                    { symbol: 'ACB', name: 'Aurora Cannabis Inc.', price: 5.09, change: -0.09, changePercent: '-1.74%' },
+                    { symbol: 'ACHR', name: 'Archer Aviation Inc.', price: 9.86, change: 0.61, changePercent: '+6.59%' },
+                    { symbol: 'ACLX', name: 'Arcellx Inc.', price: 77.86, change: -2.12, changePercent: '-2.65%' },
+                    { symbol: 'ADAP', name: 'Adaptimmune Therapeutics plc', price: 0.14, change: -0.02, changePercent: '-9.75%' },
+                    { symbol: 'ADV', name: 'Advantage Solutions Inc.', price: 1.77, change: -0.12, changePercent: '-6.35%' },
+                    { symbol: 'AGAE', name: 'Allied Gaming & Entertainment Inc.', price: 1.05, change: 0.04, changePercent: '+3.96%' },
+                    { symbol: 'AGEN', name: 'Agenus Inc.', price: 4.38, change: -0.17, changePercent: '-3.74%' },
+                    { symbol: 'AGL', name: 'agilon health inc.', price: 1.16, change: -0.01, changePercent: '-0.85%' },
+                    { symbol: 'AGNC', name: 'AGNC Investment Corp.', price: 9.97, change: -0.13, changePercent: '-1.29%' },
+                    { symbol: 'AI', name: 'C3.ai Inc.', price: 17.90, change: -0.12, changePercent: '-0.67%' },
+                    // ... (rest of the default stocks)
+                    { symbol: 'ZYME', name: 'Zymeworks Inc.', price: 16.25, change: -0.24, changePercent: '-1.46%' }
+                ];
+            }
+        }
+        
+        // --- Gemini AI Function ---
+        async function extractStockInfoFromImage(base64ImageData) {
+            loadingModal.classList.remove('hidden');
+            
+            const apiKey = ""; // Canvas will provide this
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+
+            const prompt = `Analyze the provided screenshot of a stock ticker or financial website. Identify and extract the primary stock symbol, the company name, and its current price. Return the data as a single, clean JSON object with the keys: "symbol", "name", and "price". The price should be a number, not a string. If you cannot find a piece of information, use null for its value.`;
+
+            const payload = {
+                contents: [{
+                    parts: [
+                        { text: prompt },
+                        {
+                            inlineData: {
+                                mimeType: "image/png",
+                                data: base64ImageData
+                            }
+                        }
+                    ]
+                }],
+                generationConfig: {
+                    responseMimeType: "application/json",
+                    responseSchema: {
+                      type: "OBJECT",
+                      properties: {
+                        "symbol": { "type": "STRING" },
+                        "name":   { "type": "STRING" },
+                        "price":  { "type": "NUMBER" }
+                      }
+                    }
+                }
+            };
+            
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`API call failed with status: ${response.status}`);
+                }
+
+                const result = await response.json();
+                
+                if (result.candidates && result.candidates.length > 0 && result.candidates[0].content?.parts?.[0]?.text) {
+                    const jsonText = result.candidates[0].content.parts[0].text;
+                    const data = JSON.parse(jsonText);
+                    
+                    document.getElementById('addSymbol').value = data.symbol?.toUpperCase() || '';
+                    document.getElementById('addName').value = data.name || '';
+                    document.getElementById('addPrice').value = data.price || '';
+                    addModal.classList.remove('hidden');
+
+                } else {
+                    throw new Error("Could not extract stock information. Please try another screenshot.");
+                }
+
+            } catch (error) {
+                console.error('Error during AI extraction:', error);
+                alert(`Error: ${error.message}`);
+            } finally {
+                loadingModal.classList.add('hidden');
+            }
+        }
+
+
+        // --- Event Listeners ---
+        screenshotUploadInput.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                const base64String = reader.result.replace('data:', '').replace(/^.+,/, '');
+                extractStockInfoFromImage(base64String);
+            };
+            reader.readAsDataURL(file);
+
+            event.target.value = '';
+        });
+
+        let filteredStocks = [];
+        let sortColumn = 'symbol';
+        let sortDirection = 'asc';
+        let scrollY = 0;
+        
+        const rowHeight = 40;
+        const headerHeight = 50;
+
+        function resizeCanvas() {
+            const container = canvas.parentElement;
+            canvas.width = container.clientWidth;
+            canvas.height = container.clientHeight;
+            draw();
+        }
+
+        function filterAndSort() {
+            const searchTerm = searchInput.value.toLowerCase();
+            filteredStocks = stocks.filter(stock =>
+                stock.symbol.toLowerCase().includes(searchTerm) ||
+                stock.name.toLowerCase().includes(searchTerm)
+            );
+
+            filteredStocks.sort((a, b) => {
+                let valA = a[sortColumn];
+                let valB = b[sortColumn];
+
+                if(sortColumn === 'price' || sortColumn === 'change') {
+                    valA = (typeof valA === 'number') ? valA : -Infinity;
+                    valB = (typeof valB === 'number') ? valB : -Infinity;
+                }
+
+                let comparison = 0;
+                if (valA > valB) {
+                    comparison = 1;
+                } else if (valA < valB) {
+                    comparison = -1;
+                }
+                return sortDirection === 'asc' ? comparison : comparison * -1;
+            });
+
+            scrollY = 0;
+            draw();
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawHeader();
+            drawRows();
+        }
+        
+        const columns = [
+            { name: 'Symbol', width: 0.15, key: 'symbol', align: 'left' },
+            { name: 'Name', width: 0.35, key: 'name', align: 'left' },
+            { name: 'Price', width: 0.12, key: 'price', align: 'center' },
+            { name: 'Change', width: 0.12, key: 'change', align: 'center' },
+            { name: '% Change', width: 0.12, key: 'changePercent', align: 'center' },
+            { name: 'Actions', width: 0.14, key: 'actions', align: 'center'}
+        ];
+
+        function drawHeader() {
+            ctx.fillStyle = '#374151'; 
+            ctx.fillRect(0, 0, canvas.width, headerHeight);
+
+            ctx.font = 'bold 14px Inter';
+            ctx.fillStyle = 'white';
+            ctx.textBaseline = 'middle';
+
+            let x = 0;
+            columns.forEach(col => {
+                const colWidth = canvas.width * col.width;
+                let text = col.name;
+                if (col.key === sortColumn) {
+                    text += sortDirection === 'asc' ? ' ▲' : ' ▼';
+                }
+                
+                ctx.textAlign = col.align;
+                let textX = (col.align === 'left') ? x + 10 : (col.key === 'actions') ? x + colWidth / 2 : x + colWidth / 2;
+                
+                ctx.fillText(text, textX, headerHeight / 2);
+                x += colWidth;
+            });
+        }
+        
+        function drawRows() {
+            const startIndex = Math.floor(scrollY / rowHeight);
+            const endIndex = Math.min(startIndex + Math.ceil(canvas.height / rowHeight) + 1, filteredStocks.length);
+            const editIcon = '\u270E'; 
+            const deleteIcon = '\uD83D\uDDD1';
+
+            for (let i = startIndex; i < endIndex; i++) {
+                const stock = filteredStocks[i];
+                if (!stock) continue;
+                const y = headerHeight + i * rowHeight - scrollY;
+
+                ctx.fillStyle = i % 2 === 0 ? '#F9FAFB' : 'white'; 
+                ctx.fillRect(0, y, canvas.width, rowHeight);
+                
+                let x = 0;
+                columns.forEach(col => {
+                    const colWidth = canvas.width * col.width;
+                    ctx.textAlign = col.align;
+                    
+                    if (col.key === 'actions') {
+                        ctx.font = '20px Inter';
+                        const iconY = y + rowHeight / 2;
+                        
+                        const editX = x + colWidth / 2 - 20;
+                        ctx.fillStyle = '#3B82F6';
+                        ctx.fillText(editIcon, editX, iconY);
+
+                        const deleteX = x + colWidth / 2 + 20;
+                        ctx.fillStyle = '#EF4444';
+                        ctx.fillText(deleteIcon, deleteX, iconY);
+
+                    } else {
+                        let textX = (col.align === 'left') ? x + 10 : x + colWidth / 2;
+                        let value = stock[col.key];
+                        let color = '#111827';
+                        let font = '14px Inter';
+                        
+                        if (col.key === 'symbol') {
+                             font = '500 14px Inter';
+                             color = '#3B82F6';
+                        }
+                        if(col.key === 'price') font = '500 14px Inter';
+
+                        if (typeof value === 'number') {
+                             if(col.key === 'change') {
+                                color = value >= 0 ? '#10B981' : '#EF4444';
+                             }
+                             value = value.toFixed(2);
+                        }
+                         if(col.key === 'changePercent' && typeof stock.change === 'number') {
+                             color = stock.change >= 0 ? '#10B981' : '#EF4444';
+                        }
+                        
+                        ctx.font = font;
+                        ctx.fillStyle = color;
+                        ctx.fillText(String(value), textX, y + rowHeight / 2);
+
+                        if (col.key === 'symbol') {
+                            ctx.beginPath();
+                            ctx.moveTo(textX, y + rowHeight / 2 + 8);
+                            ctx.lineTo(textX + ctx.measureText(String(value)).width, y + rowHeight / 2 + 8);
+                            ctx.strokeStyle = color;
+                            ctx.lineWidth = 1;
+                            ctx.stroke();
+                        }
+                    }
+
+                    x += colWidth;
+                });
+            }
+        }
+        
+        function getActionFromClick(x, y) {
+            const actionsCol = columns.find(c => c.key === 'actions');
+            if (!actionsCol) return null;
+
+            let actionsX = 0;
+            for(const col of columns){
+                if(col.key === 'actions') break;
+                actionsX += col.width * canvas.width;
+            }
+
+            const actionsWidth = actionsCol.width * canvas.width;
+            
+            if(x >= actionsX && x <= actionsX + actionsWidth) {
+                 const editXStart = actionsX + actionsWidth / 2 - 30;
+                 const editXEnd = actionsX + actionsWidth / 2 - 10;
+                 const deleteXStart = actionsX + actionsWidth / 2 + 10;
+                 const deleteXEnd = actionsX + actionsWidth / 2 + 30;
+                 
+                 if (x >= editXStart && x <= editXEnd) return 'edit';
+                 if (x >= deleteXStart && x <= deleteXEnd) return 'delete';
+            }
+            return null;
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+        searchInput.addEventListener('input', filterAndSort);
+
+        canvas.addEventListener('wheel', e => {
+            e.preventDefault();
+            scrollY += e.deltaY;
+            const maxScroll = Math.max(0, filteredStocks.length * rowHeight - canvas.height + headerHeight);
+            scrollY = Math.max(0, Math.min(scrollY, maxScroll));
+            draw();
+        });
+
+        canvas.addEventListener('click', e => {
+            const rect = canvas.getBoundingClientRect();
+            const y = e.clientY - rect.top;
+            const x = e.clientX - rect.left;
+            
+            if (y <= headerHeight) { 
+                let currentX = 0;
+                for(const col of columns) {
+                    currentX += col.width * canvas.width;
+                    if(x < currentX) {
+                        if (col.key !== 'actions' && col.key) { 
+                             if (sortColumn === col.key) {
+                                sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+                            } else {
+                                sortColumn = col.key;
+                                sortDirection = 'asc';
+                            }
+                            filterAndSort();
+                        }
+                        break;
+                    }
+                }
+            } else { 
+                 const rowIndex = Math.floor((scrollY + y - headerHeight) / rowHeight);
+                 const stock = filteredStocks[rowIndex];
+                 if(!stock) return;
+
+                 const action = getActionFromClick(x, y);
+                 const originalIndex = stocks.findIndex(s => s.symbol === stock.symbol);
+
+                 if (action === 'edit') {
+                     editingStockIndex = originalIndex;
+                     document.getElementById('editSymbol').value = stock.symbol;
+                     document.getElementById('editName').value = stock.name;
+                     document.getElementById('editPrice').value = stock.price;
+                     editModal.classList.remove('hidden');
+                 } else if (action === 'delete') {
+                     deletingStockIndex = originalIndex;
+                     document.getElementById('deleteStockSymbol').textContent = stock.symbol;
+                     deleteModal.classList.remove('hidden');
+                 } else { 
+                     const symbolColWidth = canvas.width * columns[0].width;
+                     if (x <= symbolColWidth) {
+                        let symbol = stock.symbol;
+                        let url;
+
+                        if (symbol.includes('-USD')) {
+                            url = `https://www.google.com/finance/quote/${symbol}`;
+                        } else if (symbol.includes(':')) {
+                            const [ticker, exchangeCode] = symbol.split(':');
+                            const exchange = exchangeCode === 'CA' ? 'TSE' : exchangeCode; 
+                            url = `https://www.google.com/finance/quote/${ticker}:${exchange}`;
+                        } else {
+                            const exchange = (symbol.length <= 3 || symbol.includes('.')) ? 'NYSE' : 'NASDAQ';
+                            url = `https://www.google.com/finance/quote/${symbol}:${exchange}`;
+                        }
+                        window.open(url, '_blank');
+                     }
+                }
+            }
+        });
+
+        addStockBtn.addEventListener('click', () => addModal.classList.remove('hidden'));
+        cancelAddBtn.addEventListener('click', () => addModal.classList.add('hidden'));
+        cancelEditBtn.addEventListener('click', () => editModal.classList.add('hidden'));
+        cancelDeleteBtn.addEventListener('click', () => deleteModal.classList.add('hidden'));
+
+        addForm.addEventListener('submit', e => {
+            e.preventDefault();
+            const symbol = document.getElementById('addSymbol').value.toUpperCase();
+            const name = document.getElementById('addName').value;
+            const price = parseFloat(document.getElementById('addPrice').value);
+            
+            if (symbol && name && !isNaN(price)) {
+                stocks.unshift({ symbol, name, price, change: 0, changePercent: '0.00%' });
+                saveStocks(); // <-- Save changes
+                addModal.classList.add('hidden');
+                addForm.reset();
+                filterAndSort(); 
+            }
+        });
+        
+        editForm.addEventListener('submit', e => {
+            e.preventDefault();
+            if (editingStockIndex !== null) {
+                const stockToEdit = stocks[editingStockIndex];
+                if(stockToEdit) {
+                    const newPrice = parseFloat(document.getElementById('editPrice').value);
+                    const originalPrice = stockToEdit.price;
+                    if (typeof originalPrice === 'number' && !isNaN(originalPrice) && originalPrice !== 0) {
+                        const change = newPrice - originalPrice;
+                        const changePercent = ((change / originalPrice) * 100).toFixed(2) + '%';
+                        stockToEdit.change = change;
+                        stockToEdit.changePercent = changePercent;
+                    }
+                     stockToEdit.price = newPrice;
+                     saveStocks(); // <-- Save changes
+                }
+                
+                editModal.classList.add('hidden');
+                editingStockIndex = null;
+                draw();
+            }
+        });
+
+        confirmDeleteBtn.addEventListener('click', () => {
+             if (deletingStockIndex !== null) {
+                stocks.splice(deletingStockIndex, 1);
+                saveStocks(); // <-- Save changes
+                deleteModal.classList.add('hidden');
+                deletingStockIndex = null;
+                filterAndSort(); 
+             }
+        });
+
+        // --- Initial App Start ---
+        loadStocks(); // Load data on start
+        const now = new Date();
+        lastUpdatedContainer.textContent = `Prices as of: ${now.toLocaleDateString()}`;
+        filterAndSort();
+        resizeCanvas();
+    });
+    </script>
+</body>
+</html>
+
