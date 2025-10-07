@@ -190,7 +190,7 @@
                 </table>
             </div>
         </div>
-        <div class="text-center text-xs text-gray-500 mt-2 md:hidden">
+        <div class="text-center text-xs text-gray-500 mt-2 md-hidden">
             ⟷ Scroll table horizontally ⟷
         </div>
     </div>
@@ -602,6 +602,24 @@
         }
 
         // --- Table Rendering and Logic ---
+        function formatLogDate(isoString) {
+            if (!isoString) {
+                return 'N/A';
+            }
+            const date = new Date(isoString);
+            if (isNaN(date.getTime())) {
+                return 'N/A'; // Handles invalid date strings gracefully in all browsers
+            }
+
+            const dateOptions = { year: '2-digit', month: 'numeric', day: 'numeric' };
+            const timeOptions = { hour: 'numeric', minute: 'numeric', hour12: true };
+
+            const datePart = date.toLocaleDateString(undefined, dateOptions);
+            const timePart = date.toLocaleTimeString([], timeOptions); // Use [] for default locale which is more robust
+
+            return `${datePart}<br>${timePart}`;
+        }
+
         function renderTable() {
             stockTableBody.innerHTML = '';
             if (filteredStocks.length === 0) {
@@ -615,7 +633,7 @@
                 row.dataset.symbol = stock.symbol;
 
                 const changeColor = stock.change >= 0 ? 'text-green-600' : 'text-red-600';
-                const logDate = stock.logDate ? new Date(stock.logDate).toLocaleDateString() : 'N/A';
+                const formattedLogDate = formatLogDate(stock.logDate);
                 
                 row.innerHTML = `
                     <td class="px-6 py-4">
@@ -628,7 +646,7 @@
                     <td class="px-6 py-4 text-center font-medium">${stock.price.toFixed(2)}</td>
                     <td class="px-6 py-4 text-center ${changeColor}">${stock.change.toFixed(2)}</td>
                     <td class="px-6 py-4 text-center ${changeColor}">${stock.changePercent}</td>
-                    <td class="px-6 py-4 text-center text-xs">${logDate}</td>
+                    <td class="px-6 py-4 text-center text-xs leading-tight">${formattedLogDate}</td>
                     <td class="px-6 py-4 text-center">
                         <div class="flex justify-center items-center space-x-2">
                             <button title="AI Analyst" data-action="analyze" class="p-1 text-yellow-500 hover:text-yellow-700">
