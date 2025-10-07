@@ -424,7 +424,7 @@
             loadingModal.querySelector('p').textContent = 'AI is identifying companies, finding symbols, and getting the latest prices...';
             loadingModal.classList.remove('hidden');
             
-            const apiKey = "";
+            const apiKey = "AIzaSyD9xRkAan0WhW8GTegveSaU5gaInCO4Yy0";
             const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
 
             const prompt = `Analyze this screenshot. Identify all company names visible. For each company name, use your search tool to find its official stock ticker symbol and its latest stock price. Return a JSON array of objects, where each object has "symbol", "name", and "price" (as a number). Omit any entries where you can't confidently find a symbol or price. If no companies are found, return an empty array.`;
@@ -472,7 +472,7 @@
             analystLoading.classList.remove('hidden');
             analystForm.classList.add('hidden');
 
-            const apiKey = "";
+            const apiKey = "AIzaSyD9xRkAan0WhW8GTegveSaU5gaInCO4Yy0";
             const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
 
             const systemPrompt = "You are a world-class financial analyst named 'Gem'. Provide concise, insightful, easy-to-understand analysis on stocks using real-time search data. Format answers with markdown (bolding, bullet points). Start with a brief, friendly greeting.";
