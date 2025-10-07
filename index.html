@@ -420,7 +420,7 @@
         }
         
         // --- Gemini AI Functions ---
-        async function extractStockInfoFromImage(base64ImageData) {
+        async function extractStockInfoFromImage(base64ImageData, mimeType) {
             loadingModal.querySelector('p').textContent = 'AI is identifying companies, finding symbols, and getting the latest prices...';
             loadingModal.classList.remove('hidden');
             
@@ -430,7 +430,7 @@
             const prompt = `Analyze this screenshot. Identify all company names visible. For each company name, use your search tool to find its official stock ticker symbol and its latest stock price. Return a JSON array of objects, where each object has "symbol", "name", and "price" (as a number). Omit any entries where you can't confidently find a symbol or price. If no companies are found, return an empty array.`;
 
             const payload = {
-                contents: [{ parts: [ { text: prompt }, { inlineData: { mimeType: "image/png", data: base64ImageData } } ] }],
+                contents: [{ parts: [ { text: prompt }, { inlineData: { mimeType: mimeType, data: base64ImageData } } ] }],
                 tools: [{ "google_search": {} }],
                 generationConfig: {
                     responseMimeType: "application/json",
@@ -719,7 +719,8 @@
              if (file && file.type.startsWith('image/')) {
                 const reader = new FileReader();
                 reader.onloadend = () => {
-                    extractStockInfoFromImage(reader.result.replace('data:', '').replace(/^.+,/, ''));
+                    // Pass the base64 data and the file's actual mime type
+                    extractStockInfoFromImage(reader.result.split(',')[1], file.type);
                 };
                 reader.readAsDataURL(file);
             }
