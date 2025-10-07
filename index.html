@@ -157,9 +157,9 @@
                  <label for="screenshotUpload" id="screenshotLabel" class="drop-zone flex flex-col items-center justify-center h-full">
                      <svg class="w-10 h-10 mb-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
                     <span class="font-semibold">Drag & Drop Screenshot Here</span>
-                    <span class="text-sm">(.png files only)</span>
+                    <span class="text-sm">(.png, .jpg files)</span>
                 </label>
-                <input type="file" id="screenshotUpload" class="hidden" accept="image/png">
+                <input type="file" id="screenshotUpload" class="hidden" accept="image/*">
                 <input type="file" id="bulkUploadInput" class="hidden" accept=".txt,.json">
             </div>
         </div>
@@ -421,17 +421,16 @@
         
         // --- Gemini AI Functions ---
         async function extractStockInfoFromImage(base64ImageData) {
-            loadingModal.querySelector('p').textContent = 'AI is identifying companies, finding symbols, and getting the latest prices...';
+            loadingModal.querySelector('p').textContent = 'AI is analyzing your screenshot for stocks...';
             loadingModal.classList.remove('hidden');
             
             const apiKey = "AIzaSyD9xRkAan0WhW8GTegveSaU5gaInCO4Yy0";
             const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
 
-            const prompt = `Analyze this screenshot. Identify all company names visible. For each company name, use your search tool to find its official stock ticker symbol and its latest stock price. Return a JSON array of objects, where each object has "symbol", "name", and "price" (as a number). Omit any entries where you can't confidently find a symbol or price. If no companies are found, return an empty array.`;
+            const prompt = `Analyze the provided screenshot of a stock watchlist or financial website. Extract ALL stock symbols, company names, and their current prices. Return a JSON array of objects, where each object has keys: "symbol", "name", and "price". The price should be a number. If no stocks are found, return an empty array.`;
 
             const payload = {
-                contents: [{ parts: [ { text: prompt }, { inlineData: { mimeType: 'image/png', data: base64ImageData } } ] }],
-                tools: [{ "google_search": {} }],
+                contents: [{ parts: [ { text: prompt }, { inlineData: { mimeType: "image/png", data: base64ImageData } } ] }],
                 generationConfig: {
                     responseMimeType: "application/json",
                     responseSchema: {
@@ -716,18 +715,12 @@
         
         // --- Event Listeners ---
         function handleImageFile(file) {
-             if (file && file.type === 'image/png') {
+             if (file && file.type.startsWith('image/')) {
                 const reader = new FileReader();
                 reader.onloadend = () => {
-                    extractStockInfoFromImage(reader.result.split(',')[1]);
+                    extractStockInfoFromImage(reader.result.replace('data:', '').replace(/^.+,/, ''));
                 };
                 reader.readAsDataURL(file);
-            } else if (file) {
-                bulkUploadPreview.innerHTML = '';
-                bulkUploadError.innerHTML = '<strong>Invalid File Type</strong><p>Please upload a PNG screenshot. Other image types are not supported for this feature.</p>';
-                bulkUploadError.classList.remove('hidden');
-                confirmBulkUploadBtn.disabled = true;
-                bulkUploadModal.classList.remove('hidden');
             }
         }
 
@@ -765,7 +758,9 @@
 
         screenshotUploadInput.addEventListener('change', (event) => {
             const file = event.target.files[0];
-            handleImageFile(file);
+            if (file && file.type.startsWith('image/')) {
+                handleImageFile(file);
+            }
             event.target.value = '';
         });
         
@@ -776,7 +771,17 @@
             screenshotLabel.classList.remove('drag-over');
             if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
                 const file = e.dataTransfer.files[0];
-                handleImageFile(file);
+
+                if (file.type.startsWith('image/')) {
+                    handleImageFile(file);
+                } else {
+                    // Show a specific error for unsupported file types
+                    bulkUploadPreview.innerHTML = '';
+                    bulkUploadError.innerHTML = '<strong>Invalid File Type</strong><p>Please drop a screenshot (.png, .jpg). For .txt or .json files, use the "Bulk Upload" button.</p>';
+                    bulkUploadError.classList.remove('hidden');
+                    confirmBulkUploadBtn.disabled = true;
+                    bulkUploadModal.classList.remove('hidden');
+                }
                 e.dataTransfer.clearData();
             }
         });
