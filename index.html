@@ -391,7 +391,7 @@
                 // Add logDate to old data for compatibility
                 stocks.forEach(stock => {
                     if (!stock.logDate) {
-                        stock.logDate = new Date(0).toISOString(); // Use a default old date for sorting
+                        stock.logDate = null; // Use null for legacy items for better display
                     }
                 });
             } else {
@@ -987,5 +987,4 @@
     </script>
 </body>
 </html>
-
 
