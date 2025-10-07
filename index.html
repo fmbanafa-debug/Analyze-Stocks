@@ -180,6 +180,7 @@
                             <th scope="col" class="px-6 py-3 cursor-pointer text-center" data-sort="price">Price</th>
                             <th scope="col" class="px-6 py-3 cursor-pointer text-center" data-sort="change">Change</th>
                             <th scope="col" class="px-6 py-3 cursor-pointer text-center" data-sort="changePercent">% Change</th>
+                            <th scope="col" class="px-6 py-3 cursor-pointer text-center" data-sort="logDate">Log Date</th>
                             <th scope="col" class="px-6 py-3 text-center">Actions</th>
                         </tr>
                     </thead>
@@ -387,26 +388,33 @@
             const savedStocks = localStorage.getItem(stockDataKey);
             if (savedStocks && savedStocks.length > 2) {
                 stocks = JSON.parse(savedStocks);
+                // Add logDate to old data for compatibility
+                stocks.forEach(stock => {
+                    if (!stock.logDate) {
+                        stock.logDate = new Date(0).toISOString(); // Use a default old date for sorting
+                    }
+                });
             } else {
                 // Default list if nothing is saved
+                const now = new Date().toISOString();
                 stocks = [
-                    { symbol: 'ABEO', name: 'Abeona Therapeutics Inc.', price: 5.38, change: -0.26, changePercent: '-4.61%' },
-                    { symbol: 'ABVX', name: 'ABVC BioPharma Inc.', price: 82.30, change: -1.01, changePercent: '-1.21%' },
-                    { symbol: 'ACAD', name: 'ACADIA Pharmaceuticals Inc.', price: 24.42, change: -0.34, changePercent: '-1.35%' },
-                    { symbol: 'ACB', name: 'Aurora Cannabis Inc.', price: 5.09, change: -0.09, changePercent: '-1.74%' },
-                    { symbol: 'ACHR', name: 'Archer Aviation Inc.', price: 9.86, change: 0.61, changePercent: '+6.59%' },
-                    { symbol: 'AI', name: 'C3.ai Inc.', price: 17.90, change: -0.12, changePercent: '-0.67%' },
-                    { symbol: 'AMC', name: 'AMC Entertainment Holdings Inc.', price: 3.01, change: 0.17, changePercent: '+5.99%' },
-                    { symbol: 'ARM', name: 'Arm Holdings plc', price: 142.91, change: -3.63, changePercent: '-2.48%' },
-                    { symbol: 'GME', name: 'GameStop Corp.', price: 26.08, change: 0.20, changePercent: '+0.77%' },
-                    { symbol: 'HOOD', name: 'Robinhood Markets Inc.', price: 124.78, change: 3.87, changePercent: '+3.20%' },
-                    { symbol: 'IONQ', name: 'IonQ Inc.', price: 70.41, change: 3.60, changePercent: '+5.39%' },
-                    { symbol: 'LCID', name: 'Lucid Group Inc.', price: 21.10, change: 0.60, changePercent: '+2.93%' },
-                    { symbol: 'PLTR', name: 'Palantir Technologies Inc.', price: 182.39, change: 5.42, changePercent: '+3.06%' },
-                    { symbol: 'RIVN', name: 'Rivian Automotive Inc.', price: 14.38, change: -0.30, changePercent: '-2.04%' },
-                    { symbol: 'SOFI', name: 'SoFi Technologies Inc.', price: 29.51, change: 1.40, changePercent: '+4.98%' },
-                    { symbol: 'SOUN', name: 'SoundHound AI Inc.', price: 16.25, change: 0.62, changePercent: '+3.97%' },
-                    { symbol: 'U', name: 'Unity Software Inc.', price: 46.05, change: 0.60, changePercent: '+1.32%' }
+                    { symbol: 'ABEO', name: 'Abeona Therapeutics Inc.', price: 5.38, change: -0.26, changePercent: '-4.61%', logDate: now },
+                    { symbol: 'ABVX', name: 'ABVC BioPharma Inc.', price: 82.30, change: -1.01, changePercent: '-1.21%', logDate: now },
+                    { symbol: 'ACAD', name: 'ACADIA Pharmaceuticals Inc.', price: 24.42, change: -0.34, changePercent: '-1.35%', logDate: now },
+                    { symbol: 'ACB', name: 'Aurora Cannabis Inc.', price: 5.09, change: -0.09, changePercent: '-1.74%', logDate: now },
+                    { symbol: 'ACHR', name: 'Archer Aviation Inc.', price: 9.86, change: 0.61, changePercent: '+6.59%', logDate: now },
+                    { symbol: 'AI', name: 'C3.ai Inc.', price: 17.90, change: -0.12, changePercent: '-0.67%', logDate: now },
+                    { symbol: 'AMC', name: 'AMC Entertainment Holdings Inc.', price: 3.01, change: 0.17, changePercent: '+5.99%', logDate: now },
+                    { symbol: 'ARM', name: 'Arm Holdings plc', price: 142.91, change: -3.63, changePercent: '-2.48%', logDate: now },
+                    { symbol: 'GME', name: 'GameStop Corp.', price: 26.08, change: 0.20, changePercent: '+0.77%', logDate: now },
+                    { symbol: 'HOOD', name: 'Robinhood Markets Inc.', price: 124.78, change: 3.87, changePercent: '+3.20%', logDate: now },
+                    { symbol: 'IONQ', name: 'IonQ Inc.', price: 70.41, change: 3.60, changePercent: '+5.39%', logDate: now },
+                    { symbol: 'LCID', name: 'Lucid Group Inc.', price: 21.10, change: 0.60, changePercent: '+2.93%', logDate: now },
+                    { symbol: 'PLTR', name: 'Palantir Technologies Inc.', price: 182.39, change: 5.42, changePercent: '+3.06%', logDate: now },
+                    { symbol: 'RIVN', name: 'Rivian Automotive Inc.', price: 14.38, change: -0.30, changePercent: '-2.04%', logDate: now },
+                    { symbol: 'SOFI', name: 'SoFi Technologies Inc.', price: 29.51, change: 1.40, changePercent: '+4.98%', logDate: now },
+                    { symbol: 'SOUN', name: 'SoundHound AI Inc.', price: 16.25, change: 0.62, changePercent: '+3.97%', logDate: now },
+                    { symbol: 'U', name: 'Unity Software Inc.', price: 46.05, change: 0.60, changePercent: '+1.32%', logDate: now }
                 ];
             }
         }
@@ -597,7 +605,7 @@
         function renderTable() {
             stockTableBody.innerHTML = '';
             if (filteredStocks.length === 0) {
-                 stockTableBody.innerHTML = `<tr><td colspan="7" class="text-center py-10 text-gray-500">No matching stocks found.</td></tr>`;
+                 stockTableBody.innerHTML = `<tr><td colspan="8" class="text-center py-10 text-gray-500">No matching stocks found.</td></tr>`;
                  return;
             }
             filteredStocks.forEach(stock => {
@@ -607,6 +615,7 @@
                 row.dataset.symbol = stock.symbol;
 
                 const changeColor = stock.change >= 0 ? 'text-green-600' : 'text-red-600';
+                const logDate = stock.logDate ? new Date(stock.logDate).toLocaleDateString() : 'N/A';
                 
                 row.innerHTML = `
                     <td class="px-6 py-4">
@@ -619,6 +628,7 @@
                     <td class="px-6 py-4 text-center font-medium">${stock.price.toFixed(2)}</td>
                     <td class="px-6 py-4 text-center ${changeColor}">${stock.change.toFixed(2)}</td>
                     <td class="px-6 py-4 text-center ${changeColor}">${stock.changePercent}</td>
+                    <td class="px-6 py-4 text-center text-xs">${logDate}</td>
                     <td class="px-6 py-4 text-center">
                         <div class="flex justify-center items-center space-x-2">
                             <button title="AI Analyst" data-action="analyze" class="p-1 text-yellow-500 hover:text-yellow-700">
@@ -709,13 +719,15 @@
                 const existingSymbols = new Set(stocks.map(s => s.symbol));
                 const newStocks = parsedBulkStocks.filter(s => !existingSymbols.has(s.symbol));
                 
+                const now = new Date().toISOString();
                 newStocks.forEach(stock => {
                     stocks.unshift({
                         symbol: stock.symbol,
                         name: stock.name,
                         price: stock.price,
                         change: 0,
-                        changePercent: '0.00%'
+                        changePercent: '0.00%',
+                        logDate: now
                     });
                 });
 
@@ -871,7 +883,7 @@
             const name = document.getElementById('addName').value;
             const price = parseFloat(document.getElementById('addPrice').value);
             if (symbol && name && !isNaN(price)) {
-                stocks.unshift({ symbol, name, price, change: 0, changePercent: '0.00%' });
+                stocks.unshift({ symbol, name, price, change: 0, changePercent: '0.00%', logDate: new Date().toISOString() });
                 saveStocks();
                 addModal.classList.add('hidden');
                 addForm.reset();
@@ -896,6 +908,7 @@
                     stockToEdit.symbol = newSymbol;
                     stockToEdit.name = newName;
                     stockToEdit.price = newPrice;
+                    stockToEdit.logDate = new Date().toISOString();
                     saveStocks();
                 }
                 editModal.classList.add('hidden');
@@ -974,4 +987,5 @@
     </script>
 </body>
 </html>
+
 
