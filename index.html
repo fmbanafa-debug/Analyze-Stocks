@@ -424,7 +424,7 @@
             loadingModal.querySelector('p').textContent = 'AI is analyzing your screenshot for stocks...';
             loadingModal.classList.remove('hidden');
             
-            const apiKey = "AIzaSyD9xRkAan0WhW8GTegveSaU5gaInCO4Yy0";
+            const apiKey = "AIzaSyDnEXbl4H664dLyY6SXlRH4IFwHX0EdVew";
             const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
 
             const prompt = `Analyze the provided screenshot of a stock watchlist or financial website. Extract ALL stock symbols, company names, and their current prices. Return a JSON array of objects, where each object has keys: "symbol", "name", and "price". The price should be a number. If no stocks are found, return an empty array.`;
@@ -471,7 +471,7 @@
             analystLoading.classList.remove('hidden');
             analystForm.classList.add('hidden');
 
-            const apiKey = "AIzaSyD9xRkAan0WhW8GTegveSaU5gaInCO4Yy0";
+            const apiKey = "AIzaSyDnEXbl4H664dLyY6SXlRH4IFwHX0EdVew";
             const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
 
             const systemPrompt = "You are a world-class financial analyst named 'Gem'. Provide concise, insightful, easy-to-understand analysis on stocks using real-time search data. Format answers with markdown (bolding, bullet points). Start with a brief, friendly greeting.";
