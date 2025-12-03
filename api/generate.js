@@ -1,24 +1,50 @@
-// api/generate.js
-export default async function handler(req, res) {
-  // 1. Get the key from the secure environment variable
-  const apiKey = process.env.GEMINI_API_KEY;
+// File: api/generate.js
+// This serverless function runs on Vercel and keeps your API key safe.
 
-  // 2. Define the Google API URL (Change 'gemini-1.5-flash' if you use a different model)
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+export const config = {
+  runtime: 'edge',
+};
+
+export default async function handler(req) {
+  // 1. Get the data from your frontend
+  const payload = await req.json();
+
+  // 2. Get your key from Vercel Environment Variables
+  const apiKey = process.env.GEMINI_API_KEY; 
+
+  if (!apiKey) {
+    return new Response(JSON.stringify({ error: 'Missing Gemini API Key' }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
 
   // 3. Forward the request to Google
   try {
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(req.body), // Pass the data from your frontend
-    });
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      }
+    );
 
     const data = await response.json();
-    res.status(200).json(data); // Send Google's answer back to your page
+
+    // 4. Send the answer back to your frontend
+    return new Response(JSON.stringify(data), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    });
   } catch (error) {
-    res.status(500).json({ error: "Error fetching from Google" });
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' },
+    });
   }
 }
+
+Once you push these changes to GitHub, Vercel will automatically redeploy your site, and the AI features will work securely!
