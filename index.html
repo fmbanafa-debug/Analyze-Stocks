@@ -440,11 +440,18 @@
             
             try {
                 // Point to your Vercel function
-                const response = await fetch('/api/generate', { 
-                    method: 'POST', 
-                    headers: { 'Content-Type': 'application/json' }, 
-                    body: JSON.stringify(payload) 
-                });
+                // Find your 'fetch' call and update it to match this:
+
+             const response = await fetch('/api/generate', {
+             method: 'POST',
+             headers: {
+        'Content-Type': 'application/json'  // <--- YOU ARE LIKELY MISSING THIS LINE
+    },
+    body: JSON.stringify({
+        prompt: `Analyze the stock ${stockSymbol}. Question: ${userQuestion}` 
+    }) 
+});
+
 
                 if (!response.ok) throw new Error(`API error: ${response.status}`);
                 const result = await response.json();
@@ -479,11 +486,18 @@
 
             try {
                 // Point to your Vercel function
-                const response = await fetch('/api/generate', { 
-                    method: 'POST', 
-                    headers: { 'Content-Type': 'application/json' }, 
-                    body: JSON.stringify(payload) 
-                });
+                // Find your 'fetch' call and update it to match this:
+
+const response = await fetch('/api/generate', {
+    method: 'POST',
+    headers: {
+        'Content-Type': 'application/json'  // <--- YOU ARE LIKELY MISSING THIS LINE
+    },
+    body: JSON.stringify({
+        prompt: `Analyze the stock ${stockSymbol}. Question: ${userQuestion}` 
+    }) 
+});
+
 
                 if (!response.ok) throw new Error(`API call failed: ${response.statusText}`);
                 const result = await response.json();
