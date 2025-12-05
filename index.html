@@ -448,7 +448,7 @@
         'Content-Type': 'application/json'  // <--- YOU ARE LIKELY MISSING THIS LINE
     },
     body: JSON.stringify({
-        prompt: `Analyze the stock ${stockSymbol}. Question: ${userQuestion}` 
+        prompt: `Analyze the stock ${Symbol}. Question: ${userQuestion}` 
     }) 
 });
 
@@ -494,7 +494,7 @@ const response = await fetch('/api/generate', {
         'Content-Type': 'application/json'  // <--- YOU ARE LIKELY MISSING THIS LINE
     },
     body: JSON.stringify({
-        prompt: `Analyze the stock ${stockSymbol}. Question: ${userQuestion}` 
+        prompt: `Analyze the stock ${Symbol}. Question: ${userQuestion}` 
     }) 
 });
 
