@@ -1,60 +1,45 @@
-// This file runs on Vercel's server.
-// It securely uses the API key you set in Vercel Environment Variables.
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
-export const config = {
-  runtime: 'edge',
-};
-
-export default async function handler(req) {
-  try {
-    // 1. Check if the API key exists in Vercel Settings
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) {
-      return new Response(
-        JSON.stringify({ error: 'Configuration Error: GEMINI_API_KEY is missing in Vercel.' }),
-        { status: 500, headers: { 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // 2. Parse the request from the frontend
-    if (req.method !== 'POST') {
-      return new Response(
-        JSON.stringify({ error: 'Method Not Allowed' }),
-        { status: 405, headers: { 'Content-Type': 'application/json' } }
-      );
-    }
-    const payload = await req.json();
-
-    // 3. Forward the request securely to Google Gemini
-    const googleResponse = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      }
+export default async function handler(req, res) {
+    // 1. CORS Headers (Allows your app to talk to this server)
+    res.setHeader('Access-Control-Allow-Credentials', true);
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
+    res.setHeader(
+        'Access-Control-Allow-Headers',
+        'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
     );
 
-    // 4. Handle Google's response
-    const data = await googleResponse.json();
-
-    if (!googleResponse.ok) {
-        return new Response(JSON.stringify(data), { 
-            status: googleResponse.status, 
-            headers: { 'Content-Type': 'application/json' } 
-        });
+    // 2. Handle the "Pre-flight" check from the browser
+    if (req.method === 'OPTIONS') {
+        res.status(200).end();
+        return;
     }
 
-    // 5. Send success back to your website
-    return new Response(JSON.stringify(data), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    // 3. Main Logic
+    try {
+        // Parse the incoming data (the prompt)
+        const { prompt } = req.body;
 
-  } catch (error) {
-    return new Response(
-      JSON.stringify({ error: `Server Error: ${error.message}` }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } }
-    );
-  }
+        if (!prompt) {
+            return res.status(400).json({ error: "Prompt is required" });
+        }
+
+        // Initialize Gemini
+        // MAKE SURE 'GEMINI_API_KEY' MATCHES YOUR VERCEL ENVIRONMENT VARIABLE NAME
+        const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+        // Generate content
+        const result = await model.generateContent(prompt);
+        const response = await result.response;
+        const text = response.text();
+
+        // Send success response
+        res.status(200).json({ result: text });
+
+    } catch (error) {
+        console.error("Server Error:", error);
+        res.status(500).json({ error: error.message });
+    }
 }
