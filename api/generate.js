@@ -28,7 +28,7 @@ export default async function handler(req, res) {
         // Initialize Gemini
         // MAKE SURE 'GEMINI_API_KEY' MATCHES YOUR VERCEL ENVIRONMENT VARIABLE NAME
         const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
 
         // Generate content
         const result = await model.generateContent(prompt);
