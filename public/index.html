@@ -99,9 +99,7 @@
         }
 
         /* Search with clear button */
-        .search-container {
-            position: relative;
-        }
+        .search-container { position: relative; }
         .clear-search {
             position: absolute;
             right: 10px;
@@ -113,9 +111,7 @@
             color: #9ca3af;
         }
         /* Highlight selected rows */
-        .row-selected {
-            background-color: #eff6ff !important;
-        }
+        .row-selected { background-color: #eff6ff !important; }
     </style>
 </head>
 <body class="p-4 md:p-8">
@@ -128,13 +124,10 @@
                     AI Stock Watchlist
                 </h1>
             </div>
-            <button id="settingsBtn" class="ml-auto p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full transition" title="API Settings">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-            </button>
-        </header>
+            </header>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-            <!-- Search and Add Manual -->
+   
             <div class="lg:col-span-1 space-y-4">
                 <div class="search-container">
                     <input type="text" id="searchInput" placeholder="Search by stock symbol or name..." class="w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition pr-10">
@@ -146,12 +139,12 @@
                         Add Stock
                     </button>
                     <button id="bulkUploadBtn" class="w-full bg-purple-600 text-white font-semibold py-3 px-4 rounded-lg shadow-md hover:bg-purple-700 transition flex items-center justify-center text-sm">
-                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                         <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
                         Bulk Upload
                     </button>
-                    <button id="exportBtn" class="w-full bg-green-600 text-white font-semibold py-3 px-4 rounded-lg shadow-md hover:bg-green-700 transition flex items-center justify-center text-sm hidden">
+                     <button id="exportBtn" class="w-full bg-green-600 text-white font-semibold py-3 px-4 rounded-lg shadow-md hover:bg-green-700 transition flex items-center justify-center text-sm hidden">
                          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                        Export
+                      Export
                     </button>
                     <button id="deleteSelectedBtn" class="w-full bg-red-600 text-white font-semibold py-3 px-4 rounded-lg shadow-md hover:bg-red-700 transition flex items-center justify-center text-sm hidden">
                         <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
@@ -159,21 +152,20 @@
                     </button>
                 </div>
             </div>
-            <!-- Screenshot Upload -->
+     
             <div class="lg:col-span-2">
                  <label for="screenshotUpload" id="screenshotLabel" class="drop-zone flex flex-col items-center justify-center h-full">
                      <svg class="w-10 h-10 mb-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
-                    <span class="font-semibold">Drag & Drop Screenshot Here</span>
+                     <span class="font-semibold">Drag & Drop Screenshot Here</span>
                     <span class="text-sm">(.png, .jpg files)</span>
                 </label>
                 <input type="file" id="screenshotUpload" class="hidden" accept="image/*">
                 <input type="file" id="bulkUploadInput" class="hidden" accept=".txt,.json">
-            </div>
+           </div>
         </div>
 
         <div id="last-updated-container" class="text-center text-sm text-gray-500 mb-4"></div>
 
-        <!-- Stock Table -->
         <div class="card">
             <div class="overflow-x-auto">
                 <table class="w-full text-sm text-left text-gray-600">
@@ -191,40 +183,16 @@
                         </tr>
                     </thead>
                     <tbody id="stockTableBody">
-                        <!-- Rows will be injected here by JavaScript -->
-                    </tbody>
+                        </tbody>
                 </table>
             </div>
         </div>
         <div class="text-center text-xs text-gray-500 mt-2 md:hidden">
-            ⟷ Scroll table horizontally ⟷
+            Scroll table horizontally 
         </div>
     </div>
 
-    <!-- Modals -->
     <div id="loadingModal" class="modal-overlay hidden"><div class="modal-content text-center"><div class="loader mx-auto"></div><p class="mt-4 text-gray-700 font-semibold">AI is analyzing...</p></div></div>
-
-    <!-- Settings Modal -->
-    <div id="settingsModal" class="modal-overlay hidden">
-        <div class="modal-content">
-            <h2 class="text-xl font-bold mb-4">API Settings</h2>
-            <p class="text-sm text-gray-600 mb-4">To use the AI features (Screenshot analysis & AI Analyst), you need a Google Gemini API Key. It's free to get one.</p>
-            <div class="mb-4">
-                <label for="apiKeyInput" class="block text-sm font-medium text-gray-700 mb-1">Gemini API Key</label>
-                <input type="password" id="apiKeyInput" placeholder="Paste your API key here" class="w-full p-2 border border-gray-300 rounded-md shadow-sm">
-            </div>
-            <div class="text-xs text-blue-600 mb-6">
-                <a href="https://aistudio.google.com/app/apikey" target="_blank" class="hover:underline flex items-center">
-                    Get a free API key here
-                    <svg class="w-3 h-3 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
-                </a>
-            </div>
-            <div class="flex justify-end gap-3">
-                <button type="button" class="cancel-btn bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300">Close</button>
-                <button id="saveApiKeyBtn" class="bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-700">Save Key</button>
-            </div>
-        </div>
-    </div>
 
     <div id="editModal" class="modal-overlay hidden">
         <div class="modal-content">
@@ -259,7 +227,7 @@
                     <input type="text" id="addSymbol" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm" required>
                 </div>
                 <div class="mb-4">
-                    <label for="addName" class="block text-sm font-medium text-gray-700">Name</label>
+                     <label for="addName" class="block text-sm font-medium text-gray-700">Name</label>
                     <input type="text" id="addName" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm" required>
                 </div>
                 <div class="mb-4">
@@ -290,7 +258,7 @@
             <h2 class="text-xl font-bold mb-4">Confirm Bulk Deletion</h2>
             <p class="text-gray-600 mb-6">Are you sure you want to delete the <span id="bulkDeleteCount" class="font-semibold"></span> selected stocks?</p>
             <div class="flex justify-center gap-4">
-                <button class="cancel-btn bg-gray-200 text-gray-800 font-semibold py-2 px-6 rounded-lg hover:bg-gray-300">Cancel</button>
+                 <button class="cancel-btn bg-gray-200 text-gray-800 font-semibold py-2 px-6 rounded-lg hover:bg-gray-300">Cancel</button>
                 <button id="confirmBulkDeleteBtn" class="bg-red-600 text-white font-semibold py-2 px-6 rounded-lg hover:bg-red-700">Delete</button>
             </div>
         </div>
@@ -308,7 +276,6 @@
         </div>
     </div>
 
-    <!-- AI Analyst Modal -->
     <div id="analystModal" class="modal-overlay hidden">
         <div class="modal-content" style="max-width: 600px;">
             <div class="flex justify-between items-center mb-4">
@@ -322,7 +289,7 @@
                 <div class="loader mx-auto"></div>
                 <p class="text-sm text-gray-600 mt-2">Searching for the latest information...</p>
             </div>
-            <form id="analystForm" class="flex gap-2">
+             <form id="analystForm" class="flex gap-2">
                 <select id="analystQuestionSelect" class="flex-grow p-2 border border-gray-300 rounded-md shadow-sm bg-white">
                     <option value="revenue">Latest Yearly Revenue</option>
                     <option value="profit">Latest Yearly Net Profit</option>
@@ -333,7 +300,6 @@
         </div>
     </div>
 
-    <!-- Bulk Upload Modal -->
     <div id="bulkUploadModal" class="modal-overlay hidden">
         <div class="modal-content" style="max-width: 600px;">
             <h2 class="text-xl font-bold mb-4">Bulk Upload Preview</h2>
@@ -378,12 +344,7 @@
         const addForm = document.getElementById('addForm');
         const editForm = document.getElementById('editForm');
         const copyExportBtn = document.getElementById('copyExportBtn');
-        
-        // Settings Elements
-        const settingsBtn = document.getElementById('settingsBtn');
-        const settingsModal = document.getElementById('settingsModal');
-        const saveApiKeyBtn = document.getElementById('saveApiKeyBtn');
-        const apiKeyInput = document.getElementById('apiKeyInput');
+        // Settings Elements Removed
 
         // Bulk Upload elements
         const bulkUploadBtn = document.getElementById('bulkUploadBtn');
@@ -401,7 +362,6 @@
         const chatHistory = document.getElementById('chatHistory');
         const analystStockSymbol = document.getElementById('analystStockSymbol');
         const analystLoading = document.getElementById('analystLoading');
-
         let editingStockIndex = null;
         let deletingStockIndex = null;
         let analyzingStock = null;
@@ -413,39 +373,6 @@
 
         // --- Data Persistence Setup ---
         const stockDataKey = 'aiStockWatchlistData';
-        const apiKeyStorageKey = 'geminiApiKey';
-        
-        // Initialize API Key from environment or storage
-        // In the immersive preview, __initial_api_key might be available.
-        // In a standalone deployment, it will be empty.
-        let apiKey = ""; 
-
-        function initApiKey() {
-            const storedKey = localStorage.getItem(apiKeyStorageKey);
-            if (storedKey) {
-                apiKey = storedKey;
-            }
-        }
-
-        function saveApiKey() {
-            const key = apiKeyInput.value.trim();
-            if (key) {
-                apiKey = key;
-                localStorage.setItem(apiKeyStorageKey, key);
-                settingsModal.classList.add('hidden');
-                alert('API Key saved successfully!');
-            } else {
-                alert('Please enter a valid API key.');
-            }
-        }
-        
-        function checkApiKey() {
-            if (!apiKey) {
-                settingsModal.classList.remove('hidden');
-                return false;
-            }
-            return true;
-        }
 
         function saveStocks() {
             localStorage.setItem(stockDataKey, JSON.stringify(stocks));
@@ -479,36 +406,56 @@
             }
         }
         
-        // --- Gemini AI Functions ---
-        async function extractStockInfoFromImage(base64ImageData) {
-            if (!checkApiKey()) return;
+        // --- Gemini AI Functions (Backend Integration) ---
 
-            loadingModal.querySelector('p').textContent = 'AI is analyzing your screenshot for stocks...';
-            loadingModal.classList.remove('hidden');
-            
-            const prompt = `Analyze the provided screenshot of a stock watchlist or financial website. Extract ALL stock symbols, company names, and their current prices. Return a JSON array of objects, where each object has keys: "symbol", "name", and "price". The price should be a number. If no stocks are found, return an empty array. ONLY return valid JSON. Do not include markdown code blocks.`;
-            
-            const payload = {
-                contents: [{ 
-                    role: "user",
-                    parts: [ { text: prompt }, { inlineData: { mimeType: "image/png", data: base64ImageData } } ] 
-                }]
-            };
-            
+        // 1. New Helper Function from your backend-code file
+        async function callBackendAPI(prompt, base64Image = null) {
+            // Check if running locally without a server environment
+            if (window.location.protocol === 'file:' || window.location.protocol === 'blob:') {
+                alert("Please deploy to Vercel (or a compatible server) to use the AI features.");
+                return null;
+            }
+
             try {
-                const response = await fetch(`api/generate`, { 
-                    method: 'POST', 
-                    headers: { 'Content-Type': 'application/json' }, 
-                    body: JSON.stringify(payload) 
+                // Calls the backend endpoint instead of Google directly
+                const response = await fetch('/api/generate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ prompt, image: base64Image })
                 });
 
-                if (!response.ok) throw new Error(`API error: ${response.status}`);
-                const result = await response.json();
+                if (!response.ok) throw new Error('Backend API Error: ' + response.statusText);
                 
-                let text = result.candidates?.[0]?.content?.parts?.[0]?.text;
+                const data = await response.json();
+                return data.text; // The backend returns { text: "..." }
+
+            } catch (error) {
+                console.error('API Request Failed:', error);
+                throw error; // Re-throw to be handled by the calling function
+            }
+        }
+
+        // 2. Updated Image Extraction Function
+        async function extractStockInfoFromImage(base64ImageData) {
+            // We no longer need to checkApiKey() here because the server handles it
+            
+            loadingModal.querySelector('p').textContent = 'AI is analyzing your screenshot for stocks...';
+            loadingModal.classList.remove('hidden');
+
+            const prompt = `Analyze the provided screenshot of a stock watchlist or financial website.
+            Extract ALL stock symbols, company names, and their current prices.
+            Return a JSON array of objects, where each object has keys: "symbol", "name", and "price".
+            The price should be a number. If no stocks are found, return an empty array. ONLY return valid JSON.
+            Do not include markdown code blocks.`;
+            
+            try {
+                // Use the new backend helper
+                let text = await callBackendAPI(prompt, base64ImageData);
+                
                 if (text) {
-                    // Clean up markdown code blocks if present
+                    // Clean up markdown code blocks if present (just in case)
                     text = text.replace(/```json/g, '').replace(/```/g, '').trim();
+                    
                     const extractedData = JSON.parse(text);
                     const stocksArray = Array.isArray(extractedData) ? extractedData : (extractedData ? [extractedData] : []);
                     displayUploadPreview({ validStocks: stocksArray, errors: [] });
@@ -517,43 +464,32 @@
                 }
             } catch (error) {
                 console.error('Error during AI extraction:', error);
-                displayUploadPreview({ validStocks: [], errors: ["The AI could not identify any stocks in the image. Please try a clearer screenshot or check your API key."] });
+                displayUploadPreview({ validStocks: [], errors: ["The AI could not identify any stocks or the server connection failed."] });
             } finally {
                 loadingModal.classList.add('hidden');
             }
         }
         
+        // 3. Updated Analysis Function
         async function getAIAnalysis(stock, query) {
-            if (!checkApiKey()) {
-                 analystLoading.classList.add('hidden');
-                 analystForm.classList.remove('hidden');
-                 return;
-            }
+            // No checkApiKey() needed
 
             analystLoading.classList.remove('hidden');
             analystForm.classList.add('hidden');
 
-            const systemPrompt = "You are a world-class financial analyst named 'Gem'. Provide concise, insightful, easy-to-understand analysis on stocks. Use your knowledge to approximate recent data if exact real-time data is unavailable via this interface. Format answers with markdown (bolding, bullet points). Start with a brief, friendly greeting.";
-            
-            const payload = {
-                contents: [{ parts: [{ text: query }] }],
-                systemInstruction: { parts: [{ text: systemPrompt }] },
-            };
+            // Combine system instruction + user query into one prompt for the backend
+            const systemContext = "You are a world-class financial analyst named 'Gem'. Provide concise, insightful, easy-to-understand analysis on stocks. Format answers with markdown (bolding, bullet points). Start with a brief, friendly greeting.";
+            const fullPrompt = `${systemContext}\n\nAnalyzing Stock: ${stock.name} (${stock.symbol}).\nUser Question: ${query}`;
 
             try {
-                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, { 
-                    method: 'POST', 
-                    headers: { 'Content-Type': 'application/json' }, 
-                    body: JSON.stringify(payload) 
-                });
+                // Use the new backend helper (no image needed here)
+                const answer = await callBackendAPI(fullPrompt, null);
+                
+                appendMessage(answer || "I'm sorry, I couldn't find a clear answer for that. Please try another question.", 'ai');
 
-                if (!response.ok) throw new Error(`API call failed: ${response.statusText}`);
-                const result = await response.json();
-                const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
-                appendMessage(text || "I'm sorry, I couldn't find a clear answer for that. Please try another question.", 'ai');
             } catch (error) {
                 console.error('Error during AI analysis:', error);
-                appendMessage(`There was an error: ${error.message}. Please check your API key in settings.`, 'ai');
+                appendMessage(`There was an error connecting to the AI server. Please try again later.`, 'ai');
             } finally {
                 analystLoading.classList.add('hidden');
                 analystForm.classList.remove('hidden');
@@ -586,7 +522,7 @@
                          data.forEach((item, index) => {
                             if (item.symbol && item.name && typeof item.price === 'number') {
                                 validStocks.push({
-                                    symbol: String(item.symbol).trim().toUpperCase(),
+                                   symbol: String(item.symbol).trim().toUpperCase(),
                                     name: String(item.name).trim(),
                                     price: item.price
                                 });
@@ -625,7 +561,6 @@
             bulkUploadError.innerHTML = '';
             bulkUploadError.classList.add('hidden');
             confirmBulkUploadBtn.disabled = true;
-
             if (errors && errors.length > 0) {
                 bulkUploadError.innerHTML = '<strong>Found issues in your file:</strong><ul class="list-disc list-inside mt-1">' + errors.map(e => `<li>${e}</li>`).join('') + '</ul>';
                 bulkUploadError.classList.remove('hidden');
@@ -661,7 +596,8 @@
                 displayUploadPreview(result);
             };
             reader.readAsText(file);
-            bulkUploadInput.value = ''; // Reset for re-uploading same file
+            bulkUploadInput.value = '';
+            // Reset for re-uploading same file
         }
 
         // --- Table Rendering and Logic ---
@@ -711,7 +647,7 @@
 
         function updateSortIndicators() {
             document.querySelectorAll('thead th[data-sort]').forEach(th => {
-                let text = th.textContent.replace(' ▲', '').replace(' ▼', '');
+                let text = th.textContent.replace(' ▼', '').replace(' ▲', '');
                 if (th.dataset.sort === sortColumn) {
                     text += sortDirection === 'asc' ? ' ▲' : ' ▼';
                 }
@@ -770,11 +706,9 @@
         bulkUploadBtn.addEventListener('click', () => {
             bulkUploadInput.click();
         });
-
         bulkUploadInput.addEventListener('change', (e) => {
             handleBulkUploadFile(e.target.files[0]);
         });
-        
         confirmBulkUploadBtn.addEventListener('click', () => {
             if (parsedBulkStocks.length > 0) {
                 const existingSymbols = new Set(stocks.map(s => s.symbol));
@@ -796,7 +730,6 @@
                 parsedBulkStocks = [];
             }
         });
-
         screenshotUploadInput.addEventListener('change', (event) => {
             const file = event.target.files[0];
             if (file && file.type.startsWith('image/')) {
@@ -804,7 +737,6 @@
             }
             event.target.value = '';
         });
-        
         screenshotLabel.addEventListener('dragover', (e) => { e.preventDefault(); screenshotLabel.classList.add('drag-over'); });
         screenshotLabel.addEventListener('dragleave', () => { screenshotLabel.classList.remove('drag-over'); });
         screenshotLabel.addEventListener('drop', (e) => {
@@ -826,7 +758,6 @@
                 e.dataTransfer.clearData();
             }
         });
-
         tableHeader.addEventListener('click', (e) => {
             const th = e.target.closest('th');
             if (th && th.dataset.sort) {
@@ -840,7 +771,6 @@
                 filterAndSort();
             }
         });
-        
         selectAllCheckbox.addEventListener('change', () => {
             const filteredSymbols = filteredStocks.map(s => s.symbol);
             if (selectAllCheckbox.checked) {
@@ -851,7 +781,6 @@
             updateSelectionActionButtons();
             renderTable();
         });
-
         stockTableBody.addEventListener('click', e => {
             const checkbox = e.target.closest('input.row-checkbox');
             const button = e.target.closest('button[data-action]');
@@ -878,7 +807,7 @@
 
             if (button) {
                  const action = button.dataset.action;
-                 if (action === 'analyze') {
+                if (action === 'analyze') {
                     analyzingStock = stock;
                     analystStockSymbol.textContent = stock.symbol;
                     chatHistory.innerHTML = '<div class="ai-message chat-message">Hello! I\'m your AI Analyst. Select a topic below and I\'ll find the latest information for you.</div>';
@@ -899,7 +828,6 @@
                  window.open(getStockLink(symbol), '_blank');
             }
         });
-
         analystForm.addEventListener('submit', (e) => {
             e.preventDefault();
             const selectedOption = analystQuestionSelect.options[analystQuestionSelect.selectedIndex];
@@ -927,14 +855,6 @@
         
         addStockBtn.addEventListener('click', () => addModal.classList.remove('hidden'));
         
-        // Settings listeners
-        settingsBtn.addEventListener('click', () => {
-             apiKeyInput.value = apiKey; // Pre-fill with existing key
-             settingsModal.classList.remove('hidden');
-        });
-        saveApiKeyBtn.addEventListener('click', saveApiKey);
-
-
         // Close modals logic
         document.querySelectorAll('.modal-overlay').forEach(modal => {
             modal.addEventListener('click', e => {
@@ -957,7 +877,6 @@
                 filterAndSort(); 
             }
         });
-        
         editForm.addEventListener('submit', e => {
             e.preventDefault();
             if (editingStockIndex !== null) {
@@ -968,7 +887,8 @@
                     const newPrice = parseFloat(document.getElementById('editPrice').value);
                     
                     const originalPrice = stockToEdit.price;
-                     if (typeof originalPrice === 'number' && !isNaN(originalPrice) && originalPrice !== 0 && newPrice !== originalPrice) {
+                    
+                    if (typeof originalPrice === 'number' && !isNaN(originalPrice) && originalPrice !== 0 && newPrice !== originalPrice) {
                         stockToEdit.change = newPrice - originalPrice;
                         stockToEdit.changePercent = ((stockToEdit.change / originalPrice) * 100).toFixed(2) + '%';
                     }
@@ -982,7 +902,6 @@
                 filterAndSort();
             }
         });
-
         confirmDeleteBtn.addEventListener('click', () => {
              if (deletingStockIndex !== null) {
                 stocks.splice(deletingStockIndex, 1);
@@ -992,12 +911,10 @@
                 filterAndSort(); 
              }
         });
-        
         deleteSelectedBtn.addEventListener('click', () => {
             document.getElementById('bulkDeleteCount').textContent = selectedSymbols.size;
             bulkDeleteModal.classList.remove('hidden');
         });
-
         confirmBulkDeleteBtn.addEventListener('click', () => {
             stocks = stocks.filter(stock => !selectedSymbols.has(stock.symbol));
             selectedSymbols.clear();
@@ -1007,7 +924,6 @@
             updateSelectionActionButtons();
             updateSelectAllCheckboxState();
         });
-
         // Search input logic
         searchInput.addEventListener('input', () => {
             clearSearchBtn.classList.toggle('hidden', searchInput.value.length === 0);
@@ -1019,7 +935,6 @@
             filterAndSort();
             searchInput.focus();
         });
-
         // Export logic
         exportBtn.addEventListener('click', () => {
             let exportText = 'Symbol\tName\tPrice\tLink\n';
@@ -1032,7 +947,6 @@
             document.getElementById('exportData').value = exportText;
             exportModal.classList.remove('hidden');
         });
-        
         copyExportBtn.addEventListener('click', () => {
             const exportData = document.getElementById('exportData');
             exportData.select();
@@ -1040,10 +954,8 @@
             copyExportBtn.textContent = 'Copied!';
             setTimeout(() => { copyExportBtn.textContent = 'Copy to Clipboard'; }, 2000);
         });
-
         // --- Initial App Start ---
         function init() {
-            initApiKey();
             loadStocks();
             lastUpdatedContainer.textContent = `Prices as of: ${new Date().toLocaleDateString()}`;
             filterAndSort();
@@ -1054,5 +966,3 @@
     </script>
 </body>
 </html>
-
-
