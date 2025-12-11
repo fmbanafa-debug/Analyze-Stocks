@@ -319,7 +319,7 @@
 
     <script>
     document.addEventListener('DOMContentLoaded', () => {
-        // Core elements
+        // --- Core Elements ---
         const searchInput = document.getElementById('searchInput');
         const clearSearchBtn = document.getElementById('clearSearchBtn');
         const lastUpdatedContainer = document.getElementById('last-updated-container');
@@ -329,7 +329,7 @@
         const exportBtn = document.getElementById('exportBtn');
         const deleteSelectedBtn = document.getElementById('deleteSelectedBtn');
 
-        // Modal Elements
+        // --- Modal Elements ---
         const addStockBtn = document.getElementById('addStockBtn');
         const screenshotUploadInput = document.getElementById('screenshotUpload');
         const screenshotLabel = document.getElementById('screenshotLabel');
@@ -344,9 +344,8 @@
         const addForm = document.getElementById('addForm');
         const editForm = document.getElementById('editForm');
         const copyExportBtn = document.getElementById('copyExportBtn');
-        // Settings Elements Removed
 
-        // Bulk Upload elements
+        // --- Bulk Upload Elements ---
         const bulkUploadBtn = document.getElementById('bulkUploadBtn');
         const bulkUploadInput = document.getElementById('bulkUploadInput');
         const bulkUploadModal = document.getElementById('bulkUploadModal');
@@ -355,13 +354,15 @@
         const confirmBulkUploadBtn = document.getElementById('confirmBulkUploadBtn');
         let parsedBulkStocks = [];
         
-        // Analyst Modal Elements
+        // --- Analyst Modal Elements ---
         const analystModal = document.getElementById('analystModal');
         const analystForm = document.getElementById('analystForm');
         const analystQuestionSelect = document.getElementById('analystQuestionSelect');
         const chatHistory = document.getElementById('chatHistory');
         const analystStockSymbol = document.getElementById('analystStockSymbol');
         const analystLoading = document.getElementById('analystLoading');
+        
+        // --- State Variables ---
         let editingStockIndex = null;
         let deletingStockIndex = null;
         let analyzingStock = null;
@@ -370,10 +371,9 @@
         let selectedSymbols = new Set();
         let sortColumn = 'symbol';
         let sortDirection = 'asc';
-
-        // --- Data Persistence Setup ---
         const stockDataKey = 'aiStockWatchlistData';
 
+        // --- Data Persistence ---
         function saveStocks() {
             localStorage.setItem(stockDataKey, JSON.stringify(stocks));
         }
@@ -383,7 +383,6 @@
             if (savedStocks && savedStocks.length > 2) {
                 stocks = JSON.parse(savedStocks);
             } else {
-                // Default list if nothing is saved
                 stocks = [
                     { symbol: 'ABEO', name: 'Abeona Therapeutics Inc.', price: 5.38, change: -0.26, changePercent: '-4.61%' },
                     { symbol: 'ABVX', name: 'ABVC BioPharma Inc.', price: 82.30, change: -1.01, changePercent: '-1.21%' },
@@ -406,56 +405,42 @@
             }
         }
         
-        // --- Gemini AI Functions (Backend Integration) ---
+        // --- Gemini AI Functions (Fixed to match Backend Code) ---
 
-        // 1. New Helper Function from your backend-code file
+        // 1. Helper Function
         async function callBackendAPI(prompt, base64Image = null) {
-            // Check if running locally without a server environment
             if (window.location.protocol === 'file:' || window.location.protocol === 'blob:') {
                 alert("Please deploy to Vercel (or a compatible server) to use the AI features.");
                 return null;
             }
-
             try {
-                // Calls the backend endpoint instead of Google directly
                 const response = await fetch('/api/generate', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ prompt, image: base64Image })
                 });
-
                 if (!response.ok) throw new Error('Backend API Error: ' + response.statusText);
-                
                 const data = await response.json();
-                return data.text; // The backend returns { text: "..." }
-
+                return data.text;
             } catch (error) {
                 console.error('API Request Failed:', error);
-                throw error; // Re-throw to be handled by the calling function
+                throw error;
             }
         }
 
-        // 2. Updated Image Extraction Function
+        // 2. Image Extraction (Reverted to simple backend prompt)
         async function extractStockInfoFromImage(base64ImageData) {
-            // We no longer need to checkApiKey() here because the server handles it
-            
             loadingModal.querySelector('p').textContent = 'AI is analyzing your screenshot for stocks...';
             loadingModal.classList.remove('hidden');
 
-            const prompt = `Analyze the provided screenshot of a stock watchlist or financial website.
-            Extract ALL stock symbols, company names, and their current prices.
-            Return a JSON array of objects, where each object has keys: "symbol", "name", and "price".
-            The price should be a number. If no stocks are found, return an empty array. ONLY return valid JSON.
-            Do not include markdown code blocks.`;
+            // EXACT PROMPT FROM WORKING BACKEND CODE
+            const prompt = "Extract stocks from this image. Return strictly valid JSON array of objects with keys: symbol, name, price (number). No markdown.";
             
             try {
-                // Use the new backend helper
                 let text = await callBackendAPI(prompt, base64ImageData);
                 
                 if (text) {
-                    // Clean up markdown code blocks if present (just in case)
                     text = text.replace(/```json/g, '').replace(/```/g, '').trim();
-                    
                     const extractedData = JSON.parse(text);
                     const stocksArray = Array.isArray(extractedData) ? extractedData : (extractedData ? [extractedData] : []);
                     displayUploadPreview({ validStocks: stocksArray, errors: [] });
@@ -470,23 +455,17 @@
             }
         }
         
-        // 3. Updated Analysis Function
-        async function getAIAnalysis(stock, query) {
-            // No checkApiKey() needed
-
+        // 3. Analysis Function (Reverted to simple backend prompt)
+        async function getAIAnalysis(stock, simpleQuestion) {
             analystLoading.classList.remove('hidden');
             analystForm.classList.add('hidden');
 
-            // Combine system instruction + user query into one prompt for the backend
-            const systemContext = "You are a world-class financial analyst named 'Gem'. Provide concise, insightful, easy-to-understand analysis on stocks. Format answers with markdown (bolding, bullet points). Start with a brief, friendly greeting.";
-            const fullPrompt = `${systemContext}\n\nAnalyzing Stock: ${stock.name} (${stock.symbol}).\nUser Question: ${query}`;
+            // EXACT PROMPT STRUCTURE FROM WORKING BACKEND CODE
+            const fullPrompt = `Analyze ${stock.name} (${stock.symbol}). User question: ${simpleQuestion}. Keep it short.`;
 
             try {
-                // Use the new backend helper (no image needed here)
                 const answer = await callBackendAPI(fullPrompt, null);
-                
                 appendMessage(answer || "I'm sorry, I couldn't find a clear answer for that. Please try another question.", 'ai');
-
             } catch (error) {
                 console.error('Error during AI analysis:', error);
                 appendMessage(`There was an error connecting to the AI server. Please try again later.`, 'ai');
@@ -500,6 +479,7 @@
         function appendMessage(text, sender) {
             const messageDiv = document.createElement('div');
             messageDiv.classList.add('chat-message', `${sender}-message`);
+            // Simple markdown formatting
             let html = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
             html = html.replace(/\* (.*?)(?=\n\* |\n\n|$)/g, '<li>$1</li>');
             html = html.replace(/(\r\n|\n|\r)/g, "<br>");
@@ -509,7 +489,7 @@
             chatHistory.appendChild(messageDiv);
         }
 
-        // --- Bulk Upload Functions ---
+        // --- Bulk Upload Logic ---
         function parseFileContent(content, fileType) {
             const validStocks = [];
             const errors = [];
@@ -561,6 +541,7 @@
             bulkUploadError.innerHTML = '';
             bulkUploadError.classList.add('hidden');
             confirmBulkUploadBtn.disabled = true;
+
             if (errors && errors.length > 0) {
                 bulkUploadError.innerHTML = '<strong>Found issues in your file:</strong><ul class="list-disc list-inside mt-1">' + errors.map(e => `<li>${e}</li>`).join('') + '</ul>';
                 bulkUploadError.classList.remove('hidden');
@@ -597,10 +578,9 @@
             };
             reader.readAsText(file);
             bulkUploadInput.value = '';
-            // Reset for re-uploading same file
         }
 
-        // --- Table Rendering and Logic ---
+        // --- Table & UI Logic ---
         function renderTable() {
             stockTableBody.innerHTML = '';
             if (filteredStocks.length === 0) {
@@ -669,12 +649,10 @@
                 if (valA < valB) return sortDirection === 'asc' ? -1 : 1;
                 return 0;
             });
-
             updateSortIndicators();
             renderTable();
         }
         
-        // --- Selection and Export Logic ---
         function updateSelectionActionButtons() {
             const hasSelection = selectedSymbols.size > 0;
             exportBtn.classList.toggle('hidden', !hasSelection);
@@ -697,18 +675,17 @@
              if (file && file.type.startsWith('image/')) {
                 const reader = new FileReader();
                 reader.onloadend = () => {
-                    extractStockInfoFromImage(reader.result.replace('data:', '').replace(/^.+,/, ''));
+                    // Use standard split logic for reliability
+                    const base64 = reader.result.split(',')[1]; 
+                    extractStockInfoFromImage(base64);
                 };
                 reader.readAsDataURL(file);
             }
         }
 
-        bulkUploadBtn.addEventListener('click', () => {
-            bulkUploadInput.click();
-        });
-        bulkUploadInput.addEventListener('change', (e) => {
-            handleBulkUploadFile(e.target.files[0]);
-        });
+        bulkUploadBtn.addEventListener('click', () => bulkUploadInput.click());
+        bulkUploadInput.addEventListener('change', (e) => handleBulkUploadFile(e.target.files[0]));
+        
         confirmBulkUploadBtn.addEventListener('click', () => {
             if (parsedBulkStocks.length > 0) {
                 const existingSymbols = new Set(stocks.map(s => s.symbol));
@@ -730,6 +707,7 @@
                 parsedBulkStocks = [];
             }
         });
+
         screenshotUploadInput.addEventListener('change', (event) => {
             const file = event.target.files[0];
             if (file && file.type.startsWith('image/')) {
@@ -737,6 +715,7 @@
             }
             event.target.value = '';
         });
+
         screenshotLabel.addEventListener('dragover', (e) => { e.preventDefault(); screenshotLabel.classList.add('drag-over'); });
         screenshotLabel.addEventListener('dragleave', () => { screenshotLabel.classList.remove('drag-over'); });
         screenshotLabel.addEventListener('drop', (e) => {
@@ -744,11 +723,9 @@
             screenshotLabel.classList.remove('drag-over');
             if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
                 const file = e.dataTransfer.files[0];
-
                 if (file.type.startsWith('image/')) {
                     handleImageFile(file);
                 } else {
-                    // Show a specific error for unsupported file types
                     bulkUploadPreview.innerHTML = '';
                     bulkUploadError.innerHTML = '<strong>Invalid File Type</strong><p>Please drop a screenshot (.png, .jpg). For .txt or .json files, use the "Bulk Upload" button.</p>';
                     bulkUploadError.classList.remove('hidden');
@@ -758,6 +735,7 @@
                 e.dataTransfer.clearData();
             }
         });
+
         tableHeader.addEventListener('click', (e) => {
             const th = e.target.closest('th');
             if (th && th.dataset.sort) {
@@ -771,6 +749,7 @@
                 filterAndSort();
             }
         });
+
         selectAllCheckbox.addEventListener('change', () => {
             const filteredSymbols = filteredStocks.map(s => s.symbol);
             if (selectAllCheckbox.checked) {
@@ -781,6 +760,7 @@
             updateSelectionActionButtons();
             renderTable();
         });
+
         stockTableBody.addEventListener('click', e => {
             const checkbox = e.target.closest('input.row-checkbox');
             const button = e.target.closest('button[data-action]');
@@ -802,7 +782,7 @@
                 row.classList.toggle('row-selected', checkbox.checked);
                 updateSelectionActionButtons();
                 updateSelectAllCheckboxState();
-                return; // Prevent other actions when clicking checkbox
+                return; 
             }
 
             if (button) {
@@ -828,34 +808,23 @@
                  window.open(getStockLink(symbol), '_blank');
             }
         });
+
+        // --- Analyst Form Submit (Fixed to match Backend Code) ---
         analystForm.addEventListener('submit', (e) => {
             e.preventDefault();
             const selectedOption = analystQuestionSelect.options[analystQuestionSelect.selectedIndex];
-            const queryType = selectedOption.value;
-            const queryText = selectedOption.textContent;
-
-            if (queryType && analyzingStock) {
+            
+            if (analyzingStock) {
+                const queryText = selectedOption.textContent; // "Latest Yearly Revenue", etc.
                 appendMessage(queryText, 'user');
-                let fullQuery = '';
-                switch (queryType) {
-                    case 'revenue':
-                        fullQuery = `What was the latest reported annual revenue for ${analyzingStock.name} (${analyzingStock.symbol})? Please provide the amount and the fiscal year.`;
-                        break;
-                    case 'profit':
-                        fullQuery = `What was the latest reported annual net profit for ${analyzingStock.name} (${analyzingStock.symbol})? Please provide the amount and the fiscal year.`;
-                        break;
-                    case 'announcement':
-                        fullQuery = `What was the last major news or announcement that caused the biggest price shift (up or down) for ${analyzingStock.name} (${analyzingStock.symbol}) in the past year? Briefly explain the event and its impact.`;
-                        break;
-                }
-                getAIAnalysis(analyzingStock, fullQuery);
-                chatHistory.scrollTop = chatHistory.scrollHeight;
+                // Pass the simple text directly, just like the backend code did
+                getAIAnalysis(analyzingStock, queryText);
             }
         });
         
+        // --- Modal Closing & CRUD operations ---
         addStockBtn.addEventListener('click', () => addModal.classList.remove('hidden'));
         
-        // Close modals logic
         document.querySelectorAll('.modal-overlay').forEach(modal => {
             modal.addEventListener('click', e => {
                 if (e.target === modal || e.target.classList.contains('cancel-btn')) {
@@ -877,6 +846,7 @@
                 filterAndSort(); 
             }
         });
+
         editForm.addEventListener('submit', e => {
             e.preventDefault();
             if (editingStockIndex !== null) {
@@ -885,7 +855,6 @@
                     const newSymbol = document.getElementById('editSymbol').value.toUpperCase();
                     const newName = document.getElementById('editName').value;
                     const newPrice = parseFloat(document.getElementById('editPrice').value);
-                    
                     const originalPrice = stockToEdit.price;
                     
                     if (typeof originalPrice === 'number' && !isNaN(originalPrice) && originalPrice !== 0 && newPrice !== originalPrice) {
@@ -902,6 +871,7 @@
                 filterAndSort();
             }
         });
+
         confirmDeleteBtn.addEventListener('click', () => {
              if (deletingStockIndex !== null) {
                 stocks.splice(deletingStockIndex, 1);
@@ -911,10 +881,12 @@
                 filterAndSort(); 
              }
         });
+
         deleteSelectedBtn.addEventListener('click', () => {
             document.getElementById('bulkDeleteCount').textContent = selectedSymbols.size;
             bulkDeleteModal.classList.remove('hidden');
         });
+
         confirmBulkDeleteBtn.addEventListener('click', () => {
             stocks = stocks.filter(stock => !selectedSymbols.has(stock.symbol));
             selectedSymbols.clear();
@@ -924,18 +896,19 @@
             updateSelectionActionButtons();
             updateSelectAllCheckboxState();
         });
-        // Search input logic
+
         searchInput.addEventListener('input', () => {
             clearSearchBtn.classList.toggle('hidden', searchInput.value.length === 0);
             filterAndSort();
         });
+
         clearSearchBtn.addEventListener('click', () => {
             searchInput.value = '';
             clearSearchBtn.classList.add('hidden');
             filterAndSort();
             searchInput.focus();
         });
-        // Export logic
+
         exportBtn.addEventListener('click', () => {
             let exportText = 'Symbol\tName\tPrice\tLink\n';
             selectedSymbols.forEach(symbol => {
@@ -947,6 +920,7 @@
             document.getElementById('exportData').value = exportText;
             exportModal.classList.remove('hidden');
         });
+
         copyExportBtn.addEventListener('click', () => {
             const exportData = document.getElementById('exportData');
             exportData.select();
@@ -954,7 +928,7 @@
             copyExportBtn.textContent = 'Copied!';
             setTimeout(() => { copyExportBtn.textContent = 'Copy to Clipboard'; }, 2000);
         });
-        // --- Initial App Start ---
+
         function init() {
             loadStocks();
             lastUpdatedContainer.textContent = `Prices as of: ${new Date().toLocaleDateString()}`;
@@ -964,5 +938,3 @@
         init();
     });
     </script>
-</body>
-</html>
