@@ -202,11 +202,10 @@
             }
         }
 
-        // --- THE API CONNECTOR (This is the Brain) ---
+       // --- 1. THE BACKEND CONNECTION ---
         async function callBackendAPI(prompt, base64Image = null) {
-            // Safety check
-            if (window.location.protocol === 'file:') {
-                alert("Please deploy to Vercel to use AI features.");
+            if (window.location.protocol === 'file:' || window.location.protocol === 'blob:') {
+                alert("Please deploy to Vercel to use the AI features.");
                 return null;
             }
 
@@ -216,13 +215,14 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ prompt, image: base64Image })
                 });
-
-                if (!response.ok) throw new Error('API Error');
+                
+                if (!response.ok) throw new Error('Backend API Error');
                 const data = await response.json();
                 return data.text;
             } catch (error) {
                 console.error(error);
-                alert("Connection to AI server failed. Please try again.");
+                // Simple user-friendly alert
+                alert("Could not connect to AI server. Please try again later.");
                 return null;
             }
         }
