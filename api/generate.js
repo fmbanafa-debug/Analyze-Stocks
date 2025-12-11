@@ -1,45 +1,69 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+module.exports = async (request, response) => {
+    // 1. CORS Setup
+    response.setHeader('Access-Control-Allow-Origin', '*');
+    response.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    response.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
 
-export default async function handler(req, res) {
-    // 1. CORS Headers (Allows your app to talk to this server)
-    res.setHeader('Access-Control-Allow-Credentials', true);
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
-    res.setHeader(
-        'Access-Control-Allow-Headers',
-        'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
-    );
-
-    // 2. Handle the "Pre-flight" check from the browser
-    if (req.method === 'OPTIONS') {
-        res.status(200).end();
-        return;
+    if (request.method === 'OPTIONS') {
+        return response.status(200).end();
     }
 
-    // 3. Main Logic
-    try {
-        // Parse the incoming data (the prompt)
-        const { prompt } = req.body;
+    // 2. Get the Hidden Key
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+        return response.status(500).json({ error: 'Server API Key not configured' });
+    }
 
-        if (!prompt) {
-            return res.status(400).json({ error: "Prompt is required" });
+    try {
+        const { prompt, image } = request.body;
+        
+        // 3. THE URL - We use 'gemini-1.5-flash-latest' and trim the key to fix the 404 error
+        // The .trim() fixes issues if you accidentally copied a space in Vercel
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey.trim()}`;
+
+        // Prepare the body for Google
+        const requestBody = {
+            contents: [{
+                parts: [
+                    { text: prompt }
+                ]
+            }]
+        };
+
+        // If there is an image, add it to the parts
+        if (image) {
+            requestBody.contents[0].parts.push({
+                inlineData: {
+                    mimeType: "image/png",
+                    data: image
+                }
+            });
         }
 
-        // Initialize Gemini
-        // MAKE SURE 'GEMINI_API_KEY' MATCHES YOUR VERCEL ENVIRONMENT VARIABLE NAME
-        const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-        const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
+        // 4. Call Google directly (No library needed)
+        const googleResponse = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(requestBody)
+        });
 
-        // Generate content
-        const result = await model.generateContent(prompt);
-        const response = await result.response;
-        const text = response.text();
+        const data = await googleResponse.json();
 
-        // Send success response
-        res.status(200).json({ result: text });
+        // Check if Google sent an error
+        if (!googleResponse.ok) {
+            console.error("Google API Error:", JSON.stringify(data));
+            return response.status(googleResponse.status).json({ 
+                error: data.error?.message || "Error from Google API" 
+            });
+        }
+
+        // Extract the text
+        const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+        
+        return response.status(200).json({ text });
 
     } catch (error) {
         console.error("Server Error:", error);
-        res.status(500).json({ error: error.message });
+        return response.status(500).json({ error: error.message });
     }
-}
+};
