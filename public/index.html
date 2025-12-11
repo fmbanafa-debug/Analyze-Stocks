@@ -517,7 +517,7 @@ async function getAIAnalysis(stock, query) {
 
     try {
         // 2. Point to YOUR Vercel Backend
-        const response = await fetch('/api/analyze-stock', { 
+        const response = await fetch('/api/analyze-stocks', { 
             method: 'POST', 
             headers: { 'Content-Type': 'application/json' }, 
             body: JSON.stringify({ 
