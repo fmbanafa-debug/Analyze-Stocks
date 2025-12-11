@@ -480,51 +480,48 @@
         }
         
         // --- Gemini AI Functions ---
-        // --- 4. IMAGE LOGIC ---
-        document.getElementById('screenshotUpload').addEventListener('change', (e) => handleImage(e.target.files[0]));
-        document.getElementById('screenshotLabel').addEventListener('drop', (e) => {
-            e.preventDefault();
-            if(e.dataTransfer.files.length) handleImage(e.dataTransfer.files[0]);
-        });
-        document.getElementById('screenshotLabel').addEventListener('dragover', e => e.preventDefault());
+        async function extractStockInfoFromImage(base64ImageData) {
+            if (!checkApiKey()) return;
 
-        async function handleImage(file) {
-            if (!file) return;
-            document.getElementById('loadingModal').classList.remove('hidden');
+            loadingModal.querySelector('p').textContent = 'AI is analyzing your screenshot for stocks...';
+            loadingModal.classList.remove('hidden');
             
-            const reader = new FileReader();
-            reader.onloadend = async () => {
-                const base64 = reader.result.split(',')[1];
-                const prompt = "Extract stocks from this image. Return strictly valid JSON array of objects with keys: symbol, name, price (number). No markdown.";
-                
-                const jsonStr = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, { 
+            const prompt = `Analyze the provided screenshot of a stock watchlist or financial website. Extract ALL stock symbols, company names, and their current prices. Return a JSON array of objects, where each object has keys: "symbol", "name", and "price". The price should be a number. If no stocks are found, return an empty array. ONLY return valid JSON. Do not include markdown code blocks.`;
+            
+            const payload = {
+                contents: [{ 
+                    role: "user",
+                    parts: [ { text: prompt }, { inlineData: { mimeType: "image/png", data: base64ImageData } } ] 
+                }]
+            };
+            
+            try {
+                const response = await fetch(`api/generate`, { 
                     method: 'POST', 
                     headers: { 'Content-Type': 'application/json' }, 
                     body: JSON.stringify(payload) 
                 });
+
+                if (!response.ok) throw new Error(`API error: ${response.status}`);
+                const result = await response.json();
                 
-                if (!jsonStr) return; 
-
-                    
-                try {
-                    const cleanJson = jsonStr.replace(/```json/g, '').replace(/```/g, '').trim();
-                    parsedBulkStocks = JSON.parse(cleanJson);
-                    
-                    const list = document.getElementById('bulkUploadPreview');
-                    list.innerHTML = parsedBulkStocks.map(s => `<div>${s.symbol}: $${s.price}</div>`).join('');
-                    document.getElementById('bulkUploadModal').classList.remove('hidden');
-                } catch (e) {
-                    alert("Failed to parse AI response. Try a clearer image.");
+                let text = result.candidates?.[0]?.content?.parts?.[0]?.text;
+                if (text) {
+                    // Clean up markdown code blocks if present
+                    text = text.replace(/```json/g, '').replace(/```/g, '').trim();
+                    const extractedData = JSON.parse(text);
+                    const stocksArray = Array.isArray(extractedData) ? extractedData : (extractedData ? [extractedData] : []);
+                    displayUploadPreview({ validStocks: stocksArray, errors: [] });
+                } else {
+                    throw new Error("Could not extract any stock information.");
                 }
-            };
-            reader.readAsDataURL(file);
+            } catch (error) {
+                console.error('Error during AI extraction:', error);
+                displayUploadPreview({ validStocks: [], errors: ["The AI could not identify any stocks in the image. Please try a clearer screenshot or check your API key."] });
+            } finally {
+                loadingModal.classList.add('hidden');
+            }
         }
-
-        document.getElementById('confirmBulkUploadBtn').addEventListener('click', () => {
-            stocks = [...parsedBulkStocks, ...stocks];
-            renderTable();
-            document.getElementById('bulkUploadModal').classList.add('hidden');
-        });
         
         async function getAIAnalysis(stock, query) {
             if (!checkApiKey()) {
