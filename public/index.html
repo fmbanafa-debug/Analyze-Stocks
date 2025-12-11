@@ -412,8 +412,40 @@
         let sortDirection = 'asc';
 
         // --- Data Persistence Setup ---
+        const stockDataKey = 'aiStockWatchlistData';
+        const apiKeyStorageKey = 'geminiApiKey';
         
+        // Initialize API Key from environment or storage
+        // In the immersive preview, __initial_api_key might be available.
+        // In a standalone deployment, it will be empty.
+        let apiKey = ""; 
+
+        function initApiKey() {
+            const storedKey = localStorage.getItem(apiKeyStorageKey);
+            if (storedKey) {
+                apiKey = storedKey;
+            }
+        }
+
+        function saveApiKey() {
+            const key = apiKeyInput.value.trim();
+            if (key) {
+                apiKey = key;
+                localStorage.setItem(apiKeyStorageKey, key);
+                settingsModal.classList.add('hidden');
+                alert('API Key saved successfully!');
+            } else {
+                alert('Please enter a valid API key.');
+            }
+        }
         
+        function checkApiKey() {
+            if (!apiKey) {
+                settingsModal.classList.remove('hidden');
+                return false;
+            }
+            return true;
+        }
 
         function saveStocks() {
             localStorage.setItem(stockDataKey, JSON.stringify(stocks));
@@ -447,65 +479,49 @@
             }
         }
         
-        // --- 1. THE BACKEND CONNECTION ---
-        async function callBackendAPI(prompt, base64Image = null) {
-            if (window.location.protocol === 'file:' || window.location.protocol === 'blob:') {
-                alert("Please deploy to Vercel to use the AI features.");
-                return null;
-            }
-
-            try {
-                const response = await fetch('/api/generate', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ prompt, image: base64Image })
-                });
-                
-                if (!response.ok) throw new Error('Backend API Error');
-                const data = await response.json();
-                return data.text;
-            } catch (error) {
-                console.error(error);
-                // Simple user-friendly alert
-                alert("Could not connect to AI server. Please try again later.");
-                return null;
-            }
-        }
-        
         // --- Gemini AI Functions ---
-        async function handleImage(file) {
-            if (!file) return;
-            document.getElementById('loadingModal').classList.remove('hidden');
+        async function extractStockInfoFromImage(base64ImageData) {
+            if (!checkApiKey()) return;
+
+            loadingModal.querySelector('p').textContent = 'AI is analyzing your screenshot for stocks...';
+            loadingModal.classList.remove('hidden');
             
-            const reader = new FileReader();
-            reader.onloadend = async () => {
-                const base64 = reader.result.split(',')[1];
-                const prompt = "Extract stocks from this image. Return strictly valid JSON array of objects with keys: symbol, name, price (number). No markdown.";
-                
-                const jsonStr = await callBackendAPI(prompt, base64);
-                document.getElementById('loadingModal').classList.add('hidden');
-                
-                if (!jsonStr) return; 
-
-                try {
-                    const cleanJson = jsonStr.replace(/```json/g, '').replace(/```/g, '').trim();
-                    parsedBulkStocks = JSON.parse(cleanJson);
-                    
-                    const list = document.getElementById('bulkUploadPreview');
-                    list.innerHTML = parsedBulkStocks.map(s => `<div>${s.symbol}: $${s.price}</div>`).join('');
-                    document.getElementById('bulkUploadModal').classList.remove('hidden');
-                } catch (e) {
-                    alert("Failed to parse AI response. Try a clearer image.");
-                }
+            const prompt = `Analyze the provided screenshot of a stock watchlist or financial website. Extract ALL stock symbols, company names, and their current prices. Return a JSON array of objects, where each object has keys: "symbol", "name", and "price". The price should be a number. If no stocks are found, return an empty array. ONLY return valid JSON. Do not include markdown code blocks.`;
+            
+            const payload = {
+                contents: [{ 
+                    role: "user",
+                    parts: [ { text: prompt }, { inlineData: { mimeType: "image/png", data: base64ImageData } } ] 
+                }]
             };
-            reader.readAsDataURL(file);
-        }
+            
+            try {
+                const response = await fetch(`api/generate`, { 
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json' }, 
+                    body: JSON.stringify(payload) 
+                });
 
-        document.getElementById('confirmBulkUploadBtn').addEventListener('click', () => {
-            stocks = [...parsedBulkStocks, ...stocks];
-            renderTable();
-            document.getElementById('bulkUploadModal').classList.add('hidden');
-        });
+                if (!response.ok) throw new Error(`API error: ${response.status}`);
+                const result = await response.json();
+                
+                let text = result.candidates?.[0]?.content?.parts?.[0]?.text;
+                if (text) {
+                    // Clean up markdown code blocks if present
+                    text = text.replace(/```json/g, '').replace(/```/g, '').trim();
+                    const extractedData = JSON.parse(text);
+                    const stocksArray = Array.isArray(extractedData) ? extractedData : (extractedData ? [extractedData] : []);
+                    displayUploadPreview({ validStocks: stocksArray, errors: [] });
+                } else {
+                    throw new Error("Could not extract any stock information.");
+                }
+            } catch (error) {
+                console.error('Error during AI extraction:', error);
+                displayUploadPreview({ validStocks: [], errors: ["The AI could not identify any stocks in the image. Please try a clearer screenshot or check your API key."] });
+            } finally {
+                loadingModal.classList.add('hidden');
+            }
+        }
         
         async function getAIAnalysis(stock, query) {
             if (!checkApiKey()) {
@@ -517,7 +533,7 @@
             analystLoading.classList.remove('hidden');
             analystForm.classList.add('hidden');
 
-            const systemPrompt = "You are a world-class financial analyst named 'Banafa's Tool'. Provide concise, insightful, easy-to-understand analysis on stocks. Use your knowledge to approximate recent data if exact real-time data is unavailable via this interface. Format answers with markdown (bolding, bullet points). Start with a brief, friendly greeting.";
+            const systemPrompt = "You are a world-class financial analyst named 'Gem'. Provide concise, insightful, easy-to-understand analysis on stocks. Use your knowledge to approximate recent data if exact real-time data is unavailable via this interface. Format answers with markdown (bolding, bullet points). Start with a brief, friendly greeting.";
             
             const payload = {
                 contents: [{ parts: [{ text: query }] }],
@@ -525,13 +541,13 @@
             };
 
             try {
-                const response = await fetch('/api/generate', { 
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, { 
                     method: 'POST', 
                     headers: { 'Content-Type': 'application/json' }, 
-                    body: JSON.stringify({ prompt, image: base64Image })
+                    body: JSON.stringify(payload) 
                 });
 
-                if (!response.ok) throw new Error('Backend API Error');
+                if (!response.ok) throw new Error(`API call failed: ${response.statusText}`);
                 const result = await response.json();
                 const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
                 appendMessage(text || "I'm sorry, I couldn't find a clear answer for that. Please try another question.", 'ai');
