@@ -7,47 +7,164 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #f0f2f5; }
-        .card { background-color: white; border-radius: 0.75rem; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); overflow: hidden; }
-        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(0, 0, 0, 0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; }
-        .modal-content { background-color: white; padding: 2rem; border-radius: 0.75rem; width: 90%; max-width: 400px; max-height: 90vh; overflow-y: auto; }
-        .loader { border: 5px solid #f3f3f3; border-top: 5px solid #3498db; border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .chat-message { padding: 0.75rem; border-radius: 0.5rem; margin-bottom: 0.75rem; max-width: 85%; }
-        .user-message { background-color: #dbeafe; margin-left: auto; text-align: right; }
-        .ai-message { background-color: #f3f4f6; margin-right: auto; text-align: left; }
-        .drop-zone { border: 2px dashed #d1d5db; border-radius: 0.5rem; padding: 2rem; text-align: center; color: #6b7280; cursor: pointer; }
-        .drop-zone.drag-over { background-color: #e0f2fe; border-color: #3b82f6; }
-        .row-selected { background-color: #eff6ff !important; }
-        /* Utility */
-        .hidden { display: none !important; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5;
+        }
+        .card {
+            background-color: white;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            overflow: hidden;
+        }
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            transition: opacity 0.3s ease;
+        }
+        .modal-content {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+            width: 90%;
+            max-width: 400px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        .loader {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #3498db;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        /* AI Analyst Chat Styles */
+        #chatHistory {
+            height: 300px;
+            overflow-y: auto;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+        .chat-message {
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            margin-bottom: 0.75rem;
+            max-width: 85%;
+            word-wrap: break-word;
+            line-height: 1.5;
+        }
+        .user-message {
+            background-color: #dbeafe; /* blue-100 */
+            margin-left: auto;
+            text-align: right;
+        }
+        .ai-message {
+            background-color: #f3f4f6; /* gray-100 */
+            margin-right: auto;
+            text-align: left;
+        }
+         .ai-message strong { font-weight: 600; }
+         .ai-message ul { list-style-type: disc; padding-left: 20px; margin-top: 8px; }
+         .ai-message br { content: ""; display: block; margin-bottom: 0.5em; }
+         
+        /* Enhanced Drag and Drop style */
+        .drop-zone {
+            border: 2px dashed #d1d5db;
+            border-radius: 0.5rem;
+            padding: 2rem;
+            text-align: center;
+            color: #6b7280;
+            transition: background-color 0.2s ease-in-out, border-color 0.2s ease-in-out;
+            cursor: pointer;
+        }
+        .drop-zone.drag-over {
+            background-color: #e0f2fe;
+            border-color: #3b82f6;
+        }
+
+        /* Search with clear button */
+        .search-container {
+            position: relative;
+        }
+        .clear-search {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #9ca3af;
+        }
+        /* Highlight selected rows */
+        .row-selected {
+            background-color: #eff6ff !important;
+        }
     </style>
 </head>
 <body class="p-4 md:p-8">
 
     <div class="max-w-7xl mx-auto">
-        <header class="text-center mb-6 relative">
-            <h1 class="text-2xl md:text-3xl font-bold text-gray-800">AI Stock Watchlist</h1>
+        <header class="flex justify-between items-center mb-6 relative">
+            <div class="absolute left-1/2 transform -translate-x-1/2 flex items-center">
+                <h1 class="text-2xl md:text-3xl font-bold text-gray-800 flex items-center">
+                    <svg class="w-8 h-8 mr-3 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
+                    AI Stock Watchlist
+                </h1>
+            </div>
+            <button id="settingsBtn" class="ml-auto p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full transition" title="API Settings">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+            </button>
         </header>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+            <!-- Search and Add Manual -->
             <div class="lg:col-span-1 space-y-4">
-                <div class="relative">
-                    <input type="text" id="searchInput" placeholder="Search..." class="w-full p-3 border border-gray-300 rounded-lg shadow-sm">
-                    <button id="clearSearchBtn" class="absolute right-3 top-3 text-gray-400 hover:text-gray-600 hidden">&times;</button>
+                <div class="search-container">
+                    <input type="text" id="searchInput" placeholder="Search by stock symbol or name..." class="w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition pr-10">
+                    <button id="clearSearchBtn" class="clear-search hidden">&times;</button>
                 </div>
                 <div class="flex space-x-2">
-                    <button id="addStockBtn" class="flex-1 bg-blue-600 text-white font-semibold py-3 px-4 rounded-lg hover:bg-blue-700">Add</button>
-                    <button id="bulkUploadBtn" class="flex-1 bg-purple-600 text-white font-semibold py-3 px-4 rounded-lg hover:bg-purple-700">Bulk</button>
-                    <button id="exportBtn" class="flex-1 bg-green-600 text-white font-semibold py-3 px-4 rounded-lg hover:bg-green-700 hidden">Export</button>
-                    <button id="deleteSelectedBtn" class="flex-1 bg-red-600 text-white font-semibold py-3 px-4 rounded-lg hover:bg-red-700 hidden">Delete</button>
+                    <button id="addStockBtn" class="w-full bg-blue-600 text-white font-semibold py-3 px-4 rounded-lg shadow-md hover:bg-blue-700 transition flex items-center justify-center text-sm">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+                        Add Stock
+                    </button>
+                    <button id="bulkUploadBtn" class="w-full bg-purple-600 text-white font-semibold py-3 px-4 rounded-lg shadow-md hover:bg-purple-700 transition flex items-center justify-center text-sm">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                        Bulk Upload
+                    </button>
+                    <button id="exportBtn" class="w-full bg-green-600 text-white font-semibold py-3 px-4 rounded-lg shadow-md hover:bg-green-700 transition flex items-center justify-center text-sm hidden">
+                         <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                        Export
+                    </button>
+                    <button id="deleteSelectedBtn" class="w-full bg-red-600 text-white font-semibold py-3 px-4 rounded-lg shadow-md hover:bg-red-700 transition flex items-center justify-center text-sm hidden">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                        Delete
+                    </button>
                 </div>
             </div>
-
+            <!-- Screenshot Upload -->
             <div class="lg:col-span-2">
-                 <label for="screenshotUpload" id="screenshotLabel" class="drop-zone flex flex-col items-center justify-center h-full transition">
-                    <span class="font-bold text-lg">Drag & Drop Screenshot Here</span>
-                    <span class="text-sm mt-1">or click to upload</span>
+                 <label for="screenshotUpload" id="screenshotLabel" class="drop-zone flex flex-col items-center justify-center h-full">
+                     <svg class="w-10 h-10 mb-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                    <span class="font-semibold">Drag & Drop Screenshot Here</span>
+                    <span class="text-sm">(.png, .jpg files)</span>
                 </label>
                 <input type="file" id="screenshotUpload" class="hidden" accept="image/*">
                 <input type="file" id="bulkUploadInput" class="hidden" accept=".txt,.json">
@@ -56,75 +173,56 @@
 
         <div id="last-updated-container" class="text-center text-sm text-gray-500 mb-4"></div>
 
+        <!-- Stock Table -->
         <div class="card">
             <div class="overflow-x-auto">
                 <table class="w-full text-sm text-left text-gray-600">
                     <thead class="text-xs text-gray-700 uppercase bg-gray-100">
                         <tr>
-                            <th class="px-6 py-3"><input type="checkbox" id="selectAllCheckbox" class="rounded"></th>
-                            <th class="px-6 py-3 cursor-pointer hover:bg-gray-200" data-sort="symbol">Symbol</th>
-                            <th class="px-6 py-3 cursor-pointer hover:bg-gray-200" data-sort="name">Name</th>
-                            <th class="px-6 py-3 text-center cursor-pointer hover:bg-gray-200" data-sort="price">Price</th>
-                            <th class="px-6 py-3 text-center cursor-pointer hover:bg-gray-200" data-sort="change">Change</th>
-                            <th class="px-6 py-3 text-center cursor-pointer hover:bg-gray-200" data-sort="changePercent">%</th>
-                            <th class="px-6 py-3 text-center">Actions</th>
+                            <th scope="col" class="px-6 py-3">
+                                <input type="checkbox" id="selectAllCheckbox" class="rounded">
+                            </th>
+                            <th scope="col" class="px-6 py-3 cursor-pointer" data-sort="symbol">Symbol</th>
+                            <th scope="col" class="px-6 py-3 cursor-pointer" data-sort="name">Name</th>
+                            <th scope="col" class="px-6 py-3 cursor-pointer text-center" data-sort="price">Price</th>
+                            <th scope="col" class="px-6 py-3 cursor-pointer text-center" data-sort="change">Change</th>
+                            <th scope="col" class="px-6 py-3 cursor-pointer text-center" data-sort="changePercent">% Change</th>
+                            <th scope="col" class="px-6 py-3 text-center">Actions</th>
                         </tr>
                     </thead>
-                    <tbody id="stockTableBody"></tbody>
+                    <tbody id="stockTableBody">
+                        <!-- Rows will be injected here by JavaScript -->
+                    </tbody>
                 </table>
             </div>
         </div>
-    </div>
-
-    <div id="loadingModal" class="modal-overlay hidden">
-        <div class="modal-content text-center">
-            <div class="loader mx-auto"></div>
-            <p class="mt-4 text-gray-700 font-semibold">AI is analyzing...</p>
+        <div class="text-center text-xs text-gray-500 mt-2 md:hidden">
+            ⟷ Scroll table horizontally ⟷
         </div>
     </div>
 
-    <div id="analystModal" class="modal-overlay hidden">
-        <div class="modal-content" style="max-width: 600px;">
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="text-xl font-bold">AI Analyst: <span id="analystStockSymbol"></span></h2>
-                <button class="cancel-btn text-2xl font-bold text-gray-500">&times;</button>
+    <!-- Modals -->
+    <div id="loadingModal" class="modal-overlay hidden"><div class="modal-content text-center"><div class="loader mx-auto"></div><p class="mt-4 text-gray-700 font-semibold">AI is analyzing...</p></div></div>
+
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <h2 class="text-xl font-bold mb-4">API Settings</h2>
+            <p class="text-sm text-gray-600 mb-4">To use the AI features (Screenshot analysis & AI Analyst), you need a Google Gemini API Key. It's free to get one.</p>
+            <div class="mb-4">
+                <label for="apiKeyInput" class="block text-sm font-medium text-gray-700 mb-1">Gemini API Key</label>
+                <input type="password" id="apiKeyInput" placeholder="Paste your API key here" class="w-full p-2 border border-gray-300 rounded-md shadow-sm">
             </div>
-            <div id="chatHistory" class="h-64 overflow-y-auto mb-4 border p-2 rounded bg-gray-50">
-                <div class="ai-message chat-message">Hello! Ask me about this stock.</div>
+            <div class="text-xs text-blue-600 mb-6">
+                <a href="https://aistudio.google.com/app/apikey" target="_blank" class="hover:underline flex items-center">
+                    Get a free API key here
+                    <svg class="w-3 h-3 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                </a>
             </div>
-            <div id="analystLoading" class="hidden text-center p-4"><div class="loader mx-auto"></div></div>
-            <form id="analystForm" class="flex gap-2">
-                <select id="analystQuestionSelect" class="flex-grow p-2 border rounded">
-                    <option value="revenue">Latest Revenue</option>
-                    <option value="profit">Latest Net Profit</option>
-                    <option value="announcement">Latest News</option>
-                </select>
-                <button type="submit" class="bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700">Ask</button>
-            </form>
-        </div>
-    </div>
-    
-    <div id="bulkUploadModal" class="modal-overlay hidden">
-        <div class="modal-content" style="max-width: 500px;">
-            <h2 class="text-xl font-bold mb-4">Confirm Upload</h2>
-            <div id="bulkUploadError" class="text-red-600 text-sm mb-2 hidden"></div>
-            <div id="bulkUploadPreview" class="mb-4 max-h-48 overflow-y-auto border p-2 rounded"></div>
             <div class="flex justify-end gap-3">
-                <button class="cancel-btn bg-gray-200 text-gray-800 py-2 px-4 rounded">Cancel</button>
-                <button id="confirmBulkUploadBtn" class="bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700" disabled>Confirm</button>
+                <button type="button" class="cancel-btn bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300">Close</button>
+                <button id="saveApiKeyBtn" class="bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-700">Save Key</button>
             </div>
-        </div>
-    </div>
-
-    <div id="addModal" class="modal-overlay hidden">
-         <div class="modal-content">
-            <h2 class="text-xl font-bold mb-4">Add New Stock</h2>
-            <form id="addForm">
-                <div class="mb-4"><label class="block text-sm">Symbol</label><input type="text" id="addSymbol" class="w-full p-2 border rounded" required></div>
-                <div class="mb-4"><label class="block text-sm">Name</label><input type="text" id="addName" class="w-full p-2 border rounded" required></div>
-                <div class="mb-4"><label class="block text-sm">Price</label><input type="number" step="0.01" id="addPrice" class="w-full p-2 border rounded" required></div>
-                <div class="flex justify-end gap-3"><button type="button" class="cancel-btn bg-gray-200 py-2 px-4 rounded">Cancel</button><button type="submit" class="bg-blue-600 text-white py-2 px-4 rounded">Add</button></div>
-            </form>
         </div>
     </div>
 
@@ -132,11 +230,46 @@
         <div class="modal-content">
             <h2 class="text-xl font-bold mb-4">Edit Stock</h2>
             <form id="editForm">
-                <input type="hidden" id="editIndex">
-                <div class="mb-4"><label class="block text-sm">Symbol</label><input type="text" id="editSymbol" class="w-full p-2 border rounded"></div>
-                <div class="mb-4"><label class="block text-sm">Name</label><input type="text" id="editName" class="w-full p-2 border rounded"></div>
-                <div class="mb-4"><label class="block text-sm">Price</label><input type="number" step="0.01" id="editPrice" class="w-full p-2 border rounded"></div>
-                <div class="flex justify-end gap-3"><button type="button" class="cancel-btn bg-gray-200 py-2 px-4 rounded">Cancel</button><button type="submit" class="bg-blue-600 text-white py-2 px-4 rounded">Save</button></div>
+                <div class="mb-4">
+                    <label for="editSymbol" class="block text-sm font-medium text-gray-700">Symbol</label>
+                    <input type="text" id="editSymbol" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm">
+                </div>
+                <div class="mb-4">
+                    <label for="editName" class="block text-sm font-medium text-gray-700">Name</label>
+                    <input type="text" id="editName" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm">
+                </div>
+                <div class="mb-4">
+                    <label for="editPrice" class="block text-sm font-medium text-gray-700">Price</label>
+                    <input type="number" step="0.01" id="editPrice" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm" required>
+                </div>
+                <div class="flex justify-end gap-3 mt-6">
+                    <button type="button" class="cancel-btn bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300">Cancel</button>
+                    <button type="submit" class="bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-700">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="addModal" class="modal-overlay hidden">
+         <div class="modal-content">
+            <h2 class="text-xl font-bold mb-4">Add New Stock</h2>
+            <form id="addForm">
+                <div class="mb-4">
+                    <label for="addSymbol" class="block text-sm font-medium text-gray-700">Symbol</label>
+                    <input type="text" id="addSymbol" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm" required>
+                </div>
+                <div class="mb-4">
+                    <label for="addName" class="block text-sm font-medium text-gray-700">Name</label>
+                    <input type="text" id="addName" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm" required>
+                </div>
+                <div class="mb-4">
+                    <label for="addPrice" class="block text-sm font-medium text-gray-700">Price</label>
+                    <input type="number" step="0.01" id="addPrice" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm" required>
+                </div>
+                <div class="flex justify-end gap-3 mt-6">
+                    <button type="button" class="cancel-btn bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300">Cancel</button>
+                    <button type="submit" class="bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-700">Add</button>
+                </div>
             </form>
         </div>
     </div>
@@ -144,65 +277,177 @@
     <div id="deleteModal" class="modal-overlay hidden">
         <div class="modal-content text-center">
             <h2 class="text-xl font-bold mb-4">Confirm Deletion</h2>
-            <p class="mb-6">Delete <span id="deleteStockSymbol" class="font-bold"></span>?</p>
+            <p class="text-gray-600 mb-6">Are you sure you want to delete <span id="deleteStockSymbol" class="font-semibold"></span>?</p>
             <div class="flex justify-center gap-4">
-                <button class="cancel-btn bg-gray-200 py-2 px-6 rounded">Cancel</button>
-                <button id="confirmDeleteBtn" class="bg-red-600 text-white py-2 px-6 rounded">Delete</button>
+                <button class="cancel-btn bg-gray-200 text-gray-800 font-semibold py-2 px-6 rounded-lg hover:bg-gray-300">Cancel</button>
+                <button id="confirmDeleteBtn" class="bg-red-600 text-white font-semibold py-2 px-6 rounded-lg hover:bg-red-700">Delete</button>
             </div>
         </div>
     </div>
 
     <div id="bulkDeleteModal" class="modal-overlay hidden">
         <div class="modal-content text-center">
-            <h2 class="text-xl font-bold mb-4">Bulk Delete</h2>
-            <p class="mb-6">Delete <span id="bulkDeleteCount" class="font-bold"></span> selected stocks?</p>
+            <h2 class="text-xl font-bold mb-4">Confirm Bulk Deletion</h2>
+            <p class="text-gray-600 mb-6">Are you sure you want to delete the <span id="bulkDeleteCount" class="font-semibold"></span> selected stocks?</p>
             <div class="flex justify-center gap-4">
-                <button class="cancel-btn bg-gray-200 py-2 px-6 rounded">Cancel</button>
-                <button id="confirmBulkDeleteBtn" class="bg-red-600 text-white py-2 px-6 rounded">Delete</button>
+                <button class="cancel-btn bg-gray-200 text-gray-800 font-semibold py-2 px-6 rounded-lg hover:bg-gray-300">Cancel</button>
+                <button id="confirmBulkDeleteBtn" class="bg-red-600 text-white font-semibold py-2 px-6 rounded-lg hover:bg-red-700">Delete</button>
             </div>
         </div>
     </div>
 
     <div id="exportModal" class="modal-overlay hidden">
-        <div class="modal-content">
-            <h2 class="text-xl font-bold mb-4">Export List</h2>
-            <textarea id="exportData" class="w-full h-48 p-2 border rounded text-sm font-mono" readonly></textarea>
-            <div class="flex justify-end gap-3 mt-4">
-                <button class="cancel-btn bg-gray-200 py-2 px-4 rounded">Close</button>
-                <button id="copyExportBtn" class="bg-blue-600 text-white py-2 px-4 rounded">Copy</button>
+        <div class="modal-content" style="max-width: 600px;">
+            <h2 class="text-xl font-bold mb-4">Exported Stock List</h2>
+            <p class="text-sm text-gray-600 mb-4">You can copy the list below.</p>
+            <textarea id="exportData" class="w-full h-48 p-2 border border-gray-300 rounded-md font-mono text-sm" readonly></textarea>
+            <div class="flex justify-end gap-3 mt-6">
+                <button class="cancel-btn bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300">Close</button>
+                <button id="copyExportBtn" class="bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-700">Copy to Clipboard</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI Analyst Modal -->
+    <div id="analystModal" class="modal-overlay hidden">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold">AI Analyst: <span id="analystStockSymbol"></span></h2>
+                <button class="cancel-btn text-2xl font-bold text-gray-500 hover:text-gray-800">&times;</button>
+            </div>
+            <div id="chatHistory">
+                 <div class="ai-message chat-message">Hello! I'm your AI Analyst. Select a topic below and I'll find the latest information for you.</div>
+            </div>
+             <div id="analystLoading" class="hidden text-center p-4">
+                <div class="loader mx-auto"></div>
+                <p class="text-sm text-gray-600 mt-2">Searching for the latest information...</p>
+            </div>
+            <form id="analystForm" class="flex gap-2">
+                <select id="analystQuestionSelect" class="flex-grow p-2 border border-gray-300 rounded-md shadow-sm bg-white">
+                    <option value="revenue">Latest Yearly Revenue</option>
+                    <option value="profit">Latest Yearly Net Profit</option>
+                    <option value="announcement">Last Major Announcement</option>
+                </select>
+                <button type="submit" class="bg-green-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-green-700">Ask</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Bulk Upload Modal -->
+    <div id="bulkUploadModal" class="modal-overlay hidden">
+        <div class="modal-content" style="max-width: 600px;">
+            <h2 class="text-xl font-bold mb-4">Bulk Upload Preview</h2>
+            <div id="bulkUploadError" class="text-red-600 text-sm mb-4 hidden"></div>
+            <div id="bulkUploadPreview" class="mb-4 max-h-64 overflow-y-auto border p-2 rounded bg-gray-50"></div>
+            <p class="text-xs text-gray-500 mb-4">
+                Upload a .json or .txt file. Duplicates will be skipped.<br>
+                <b>.json format:</b> An array of objects, e.g., <code>[{"symbol":"GOOG","name":"Google","price":150.00}]</code> <br>
+                <b>.txt format:</b> Comma-separated values (CSV), one per line, e.g., <code>TSLA,Tesla Inc,180.00</code>
+            </p>
+            <div class="flex justify-end gap-3 mt-6">
+                <button type="button" class="cancel-btn bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300">Cancel</button>
+                <button id="confirmBulkUploadBtn" disabled class="bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-700 disabled:bg-blue-300 disabled:cursor-not-allowed">Add Stocks</button>
             </div>
         </div>
     </div>
 
     <script>
     document.addEventListener('DOMContentLoaded', () => {
-        // --- State Management ---
+        // Core elements
+        const searchInput = document.getElementById('searchInput');
+        const clearSearchBtn = document.getElementById('clearSearchBtn');
+        const lastUpdatedContainer = document.getElementById('last-updated-container');
+        const stockTableBody = document.getElementById('stockTableBody');
+        const tableHeader = document.querySelector('thead');
+        const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+        const exportBtn = document.getElementById('exportBtn');
+        const deleteSelectedBtn = document.getElementById('deleteSelectedBtn');
+
+        // Modal Elements
+        const addStockBtn = document.getElementById('addStockBtn');
+        const screenshotUploadInput = document.getElementById('screenshotUpload');
+        const screenshotLabel = document.getElementById('screenshotLabel');
+        const loadingModal = document.getElementById('loadingModal');
+        const addModal = document.getElementById('addModal');
+        const editModal = document.getElementById('editModal');
+        const deleteModal = document.getElementById('deleteModal');
+        const bulkDeleteModal = document.getElementById('bulkDeleteModal');
+        const exportModal = document.getElementById('exportModal');
+        const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+        const confirmBulkDeleteBtn = document.getElementById('confirmBulkDeleteBtn');
+        const addForm = document.getElementById('addForm');
+        const editForm = document.getElementById('editForm');
+        const copyExportBtn = document.getElementById('copyExportBtn');
+        
+        // Settings Elements
+        const settingsBtn = document.getElementById('settingsBtn');
+        const settingsModal = document.getElementById('settingsModal');
+        const saveApiKeyBtn = document.getElementById('saveApiKeyBtn');
+        const apiKeyInput = document.getElementById('apiKeyInput');
+
+        // Bulk Upload elements
+        const bulkUploadBtn = document.getElementById('bulkUploadBtn');
+        const bulkUploadInput = document.getElementById('bulkUploadInput');
+        const bulkUploadModal = document.getElementById('bulkUploadModal');
+        const bulkUploadPreview = document.getElementById('bulkUploadPreview');
+        const bulkUploadError = document.getElementById('bulkUploadError');
+        const confirmBulkUploadBtn = document.getElementById('confirmBulkUploadBtn');
+        let parsedBulkStocks = [];
+        
+        // Analyst Modal Elements
+        const analystModal = document.getElementById('analystModal');
+        const analystForm = document.getElementById('analystForm');
+        const analystQuestionSelect = document.getElementById('analystQuestionSelect');
+        const chatHistory = document.getElementById('chatHistory');
+        const analystStockSymbol = document.getElementById('analystStockSymbol');
+        const analystLoading = document.getElementById('analystLoading');
+
+        let editingStockIndex = null;
+        let deletingStockIndex = null;
+        let analyzingStock = null;
         let stocks = [];
         let filteredStocks = [];
         let selectedSymbols = new Set();
-        let sortColumn = 'symbol'; 
+        let sortColumn = 'symbol';
         let sortDirection = 'asc';
-        let analyzingStock = null;
-        let parsedBulkStocks = [];
-        let editingIndex = null;
-        let deletingIndex = null;
 
-        // --- Core Functions ---
-        const saveStocks = () => localStorage.setItem('aiStockWatchlistData', JSON.stringify(stocks));
+        // --- Data Persistence Setup ---
         
+        
+
+        function saveStocks() {
+            localStorage.setItem(stockDataKey, JSON.stringify(stocks));
+        }
+
         function loadStocks() {
-            const saved = localStorage.getItem('aiStockWatchlistData');
-            if (saved && saved.length > 5) {
-                stocks = JSON.parse(saved);
+            const savedStocks = localStorage.getItem(stockDataKey);
+            if (savedStocks && savedStocks.length > 2) {
+                stocks = JSON.parse(savedStocks);
             } else {
+                // Default list if nothing is saved
                 stocks = [
-                    {symbol:'AAPL', name:'Apple Inc', price: 150.00, change: 1.2, changePercent: '0.8%'},
-                    {symbol:'GOOGL', name:'Alphabet Inc', price: 2800.00, change: -15.00, changePercent: '-0.5%'}
+                    { symbol: 'ABEO', name: 'Abeona Therapeutics Inc.', price: 5.38, change: -0.26, changePercent: '-4.61%' },
+                    { symbol: 'ABVX', name: 'ABVC BioPharma Inc.', price: 82.30, change: -1.01, changePercent: '-1.21%' },
+                    { symbol: 'ACAD', name: 'ACADIA Pharmaceuticals Inc.', price: 24.42, change: -0.34, changePercent: '-1.35%' },
+                    { symbol: 'ACB', name: 'Aurora Cannabis Inc.', price: 5.09, change: -0.09, changePercent: '-1.74%' },
+                    { symbol: 'ACHR', name: 'Archer Aviation Inc.', price: 9.86, change: 0.61, changePercent: '+6.59%' },
+                    { symbol: 'AI', name: 'C3.ai Inc.', price: 17.90, change: -0.12, changePercent: '-0.67%' },
+                    { symbol: 'AMC', name: 'AMC Entertainment Holdings Inc.', price: 3.01, change: 0.17, changePercent: '+5.99%' },
+                    { symbol: 'ARM', name: 'Arm Holdings plc', price: 142.91, change: -3.63, changePercent: '-2.48%' },
+                    { symbol: 'GME', name: 'GameStop Corp.', price: 26.08, change: 0.20, changePercent: '+0.77%' },
+                    { symbol: 'HOOD', name: 'Robinhood Markets Inc.', price: 124.78, change: 3.87, changePercent: '+3.20%' },
+                    { symbol: 'IONQ', name: 'IonQ Inc.', price: 70.41, change: 3.60, changePercent: '+5.39%' },
+                    { symbol: 'LCID', name: 'Lucid Group Inc.', price: 21.10, change: 0.60, changePercent: '+2.93%' },
+                    { symbol: 'PLTR', name: 'Palantir Technologies Inc.', price: 182.39, change: 5.42, changePercent: '+3.06%' },
+                    { symbol: 'RIVN', name: 'Rivian Automotive Inc.', price: 14.38, change: -0.30, changePercent: '-2.04%' },
+                    { symbol: 'SOFI', name: 'SoFi Technologies Inc.', price: 29.51, change: 1.40, changePercent: '+4.98%' },
+                    { symbol: 'SOUN', name: 'SoundHound AI Inc.', price: 16.25, change: 0.62, changePercent: '+3.97%' },
+                    { symbol: 'U', name: 'Unity Software Inc.', price: 46.05, change: 0.60, changePercent: '+1.32%' }
                 ];
             }
         }
-
-       // --- 1. THE BACKEND CONNECTION ---
+        
+        // --- 1. THE BACKEND CONNECTION ---
         async function callBackendAPI(prompt, base64Image = null) {
             if (window.location.protocol === 'file:' || window.location.protocol === 'blob:') {
                 alert("Please deploy to Vercel to use the AI features.");
@@ -226,78 +471,8 @@
                 return null;
             }
         }
-
-        // --- Render Logic ---
-        function renderTable() {
-            const tbody = document.getElementById('stockTableBody');
-            tbody.innerHTML = '';
-            
-            if (filteredStocks.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="7" class="text-center py-8 text-gray-500">No stocks found.</td></tr>`;
-                return;
-            }
-
-            filteredStocks.forEach(stock => {
-                const isSel = selectedSymbols.has(stock.symbol);
-                const color = (stock.change >= 0) ? 'text-green-600' : 'text-red-600';
-                
-                const tr = document.createElement('tr');
-                tr.className = `bg-white border-b hover:bg-gray-50 ${isSel ? 'row-selected' : ''}`;
-                tr.dataset.symbol = stock.symbol;
-                
-                tr.innerHTML = `
-                    <td class="px-6 py-4"><input type="checkbox" class="row-checkbox" ${isSel ? 'checked' : ''}></td>
-                    <td class="px-6 py-4 font-bold text-blue-600">${stock.symbol}</td>
-                    <td class="px-6 py-4">${stock.name}</td>
-                    <td class="px-6 py-4 text-center">${stock.price.toFixed(2)}</td>
-                    <td class="px-6 py-4 text-center ${color}">${(stock.change || 0).toFixed(2)}</td>
-                    <td class="px-6 py-4 text-center ${color}">${stock.changePercent || '0%'}</td>
-                    <td class="px-6 py-4 text-center">
-                        <button class="analyze-btn text-yellow-500 hover:text-yellow-700 font-bold mr-2">Analyze</button>
-                        <button class="edit-btn text-blue-500 hover:text-blue-700 font-bold mr-2">Edit</button>
-                        <button class="delete-btn text-red-500 hover:text-red-700 font-bold">Del</button>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
-            
-            // Update Select All Checkbox
-            const allSelected = filteredStocks.length > 0 && filteredStocks.every(s => selectedSymbols.has(s.symbol));
-            document.getElementById('selectAllCheckbox').checked = allSelected;
-            
-            // Toggle Action Buttons
-            const hasSelection = selectedSymbols.size > 0;
-            document.getElementById('exportBtn').classList.toggle('hidden', !hasSelection);
-            document.getElementById('deleteSelectedBtn').classList.toggle('hidden', !hasSelection);
-        }
-
-        function filterAndSort() {
-            const term = document.getElementById('searchInput').value.toLowerCase();
-            const btn = document.getElementById('clearSearchBtn');
-            btn.classList.toggle('hidden', term.length === 0);
-
-            filteredStocks = stocks.filter(s => s.symbol.toLowerCase().includes(term) || s.name.toLowerCase().includes(term));
-            
-            filteredStocks.sort((a, b) => {
-                let valA = a[sortColumn], valB = b[sortColumn];
-                if (typeof valA === 'string') valA = valA.toLowerCase();
-                if (typeof valB === 'string') valB = valB.toLowerCase();
-                
-                if (valA < valB) return sortDirection === 'asc' ? -1 : 1;
-                if (valA > valB) return sortDirection === 'asc' ? 1 : -1;
-                return 0;
-            });
-            
-            // Update Header Arrows
-            document.querySelectorAll('th[data-sort]').forEach(th => {
-                const baseText = th.innerText.replace(' ▲','').replace(' ▼','');
-                th.innerText = baseText + (th.dataset.sort === sortColumn ? (sortDirection === 'asc' ? ' ▲' : ' ▼') : '');
-            });
-
-            renderTable();
-        }
-
-        // --- Event Listeners: Image Upload (Simpler Prompt) ---
+        
+        // --- Gemini AI Functions ---
         async function handleImage(file) {
             if (!file) return;
             document.getElementById('loadingModal').classList.remove('hidden');
@@ -305,193 +480,563 @@
             const reader = new FileReader();
             reader.onloadend = async () => {
                 const base64 = reader.result.split(',')[1];
-                // STRICT, SIMPLE PROMPT (From Backend Code)
                 const prompt = "Extract stocks from this image. Return strictly valid JSON array of objects with keys: symbol, name, price (number). No markdown.";
                 
                 const jsonStr = await callBackendAPI(prompt, base64);
                 document.getElementById('loadingModal').classList.add('hidden');
                 
-                if (!jsonStr) return;
-                
+                if (!jsonStr) return; 
+
                 try {
                     const cleanJson = jsonStr.replace(/```json/g, '').replace(/```/g, '').trim();
                     parsedBulkStocks = JSON.parse(cleanJson);
-                    if(!Array.isArray(parsedBulkStocks)) parsedBulkStocks = [parsedBulkStocks];
-
+                    
                     const list = document.getElementById('bulkUploadPreview');
-                    list.innerHTML = parsedBulkStocks.map(s => `<div><b>${s.symbol}</b>: ${s.name} - $${s.price}</div>`).join('');
+                    list.innerHTML = parsedBulkStocks.map(s => `<div>${s.symbol}: $${s.price}</div>`).join('');
                     document.getElementById('bulkUploadModal').classList.remove('hidden');
-                    document.getElementById('confirmBulkUploadBtn').disabled = false;
-                    document.getElementById('bulkUploadError').classList.add('hidden');
                 } catch (e) {
-                    alert("Failed to read stocks. Try a clearer image.");
+                    alert("Failed to parse AI response. Try a clearer image.");
                 }
             };
             reader.readAsDataURL(file);
         }
 
-        // --- Event Listeners: Analysis (Simpler Prompt) ---
-        document.getElementById('analystForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const select = document.getElementById('analystQuestionSelect');
-            const question = select.options[select.selectedIndex].text; // e.g. "Latest Revenue"
-            const history = document.getElementById('chatHistory');
-            
-            history.innerHTML += `<div class="user-message chat-message">${question}</div>`;
-            document.getElementById('analystLoading').classList.remove('hidden');
-            document.getElementById('analystForm').classList.add('hidden');
-
-            // STRICT, SIMPLE PROMPT (From Backend Code)
-            const prompt = `Analyze ${analyzingStock.name} (${analyzingStock.symbol}). User question: ${question}. Keep it short.`;
-            const answer = await callBackendAPI(prompt);
-
-            document.getElementById('analystLoading').classList.add('hidden');
-            document.getElementById('analystForm').classList.remove('hidden');
-
-            if (answer) {
-                // Simple formatting
-                const formatted = answer.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br>');
-                history.innerHTML += `<div class="ai-message chat-message">${formatted}</div>`;
-                history.scrollTop = history.scrollHeight;
-            }
+        document.getElementById('confirmBulkUploadBtn').addEventListener('click', () => {
+            stocks = [...parsedBulkStocks, ...stocks];
+            renderTable();
+            document.getElementById('bulkUploadModal').classList.add('hidden');
         });
-
-        // --- Wiring ---
-        document.getElementById('screenshotUpload').addEventListener('change', e => handleImage(e.target.files[0]));
-        document.getElementById('addStockBtn').addEventListener('click', () => document.getElementById('addModal').classList.remove('hidden'));
-        document.getElementById('bulkUploadBtn').addEventListener('click', () => document.getElementById('bulkUploadInput').click());
-        document.getElementById('bulkUploadInput').addEventListener('change', e => { /* Generic CSV/JSON parsing logic omitted for brevity, focusing on Image Logic */ });
         
-        // Table Clicks
-        document.getElementById('stockTableBody').addEventListener('click', (e) => {
-            const tr = e.target.closest('tr');
-            if(!tr) return;
-            const symbol = tr.dataset.symbol;
-            const stock = stocks.find(s => s.symbol === symbol);
+        async function getAIAnalysis(stock, query) {
+            if (!checkApiKey()) {
+                 analystLoading.classList.add('hidden');
+                 analystForm.classList.remove('hidden');
+                 return;
+            }
 
-            if (e.target.classList.contains('row-checkbox')) {
-                if (e.target.checked) selectedSymbols.add(symbol);
-                else selectedSymbols.delete(symbol);
-                renderTable(); // Update styles
+            analystLoading.classList.remove('hidden');
+            analystForm.classList.add('hidden');
+
+            const systemPrompt = "You are a world-class financial analyst named 'Banafa's Tool'. Provide concise, insightful, easy-to-understand analysis on stocks. Use your knowledge to approximate recent data if exact real-time data is unavailable via this interface. Format answers with markdown (bolding, bullet points). Start with a brief, friendly greeting.";
+            
+            const payload = {
+                contents: [{ parts: [{ text: query }] }],
+                systemInstruction: { parts: [{ text: systemPrompt }] },
+            };
+
+            try {
+                const response = await fetch('/api/generate', { 
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json' }, 
+                    body: JSON.stringify({ prompt, image: base64Image })
+                });
+
+                if (!response.ok) throw new Error('Backend API Error');
+                const result = await response.json();
+                const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
+                appendMessage(text || "I'm sorry, I couldn't find a clear answer for that. Please try another question.", 'ai');
+            } catch (error) {
+                console.error('Error during AI analysis:', error);
+                appendMessage(`There was an error: ${error.message}. Please check your API key in settings.`, 'ai');
+            } finally {
+                analystLoading.classList.add('hidden');
+                analystForm.classList.remove('hidden');
+                chatHistory.scrollTop = chatHistory.scrollHeight;
             }
-            else if (e.target.classList.contains('analyze-btn')) {
-                analyzingStock = stock;
-                document.getElementById('analystStockSymbol').textContent = symbol;
-                document.getElementById('chatHistory').innerHTML = '<div class="ai-message chat-message">Hello! Ask me about ' + symbol + '.</div>';
-                document.getElementById('analystModal').classList.remove('hidden');
+        }
+
+        function appendMessage(text, sender) {
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('chat-message', `${sender}-message`);
+            let html = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            html = html.replace(/\* (.*?)(?=\n\* |\n\n|$)/g, '<li>$1</li>');
+            html = html.replace(/(\r\n|\n|\r)/g, "<br>");
+            html = html.replace(/(<li>.*<\/li>)/g, '<ul>$1</ul>');
+            html = html.replace(/<\/ul><br><ul>/g, '');
+            messageDiv.innerHTML = html;
+            chatHistory.appendChild(messageDiv);
+        }
+
+        // --- Bulk Upload Functions ---
+        function parseFileContent(content, fileType) {
+            const validStocks = [];
+            const errors = [];
+            try {
+                if (fileType === 'json') {
+                    const data = JSON.parse(content);
+                    if (!Array.isArray(data)) {
+                        errors.push('JSON file should contain an array of stocks.');
+                    } else {
+                         data.forEach((item, index) => {
+                            if (item.symbol && item.name && typeof item.price === 'number') {
+                                validStocks.push({
+                                    symbol: String(item.symbol).trim().toUpperCase(),
+                                    name: String(item.name).trim(),
+                                    price: item.price
+                                });
+                            } else {
+                                errors.push(`Entry #${index + 1} is missing required fields (symbol, name, price) or price is not a number.`);
+                            }
+                        });
+                    }
+                } else if (fileType === 'txt') {
+                    const lines = content.split(/\r?\n/).filter(line => line.trim() !== '');
+                    lines.forEach((line, index) => {
+                        const parts = line.split(',');
+                        if (parts.length !== 3) {
+                            errors.push(`Line ${index + 1}: Expected 3 columns, but found ${parts.length}.`);
+                            return;
+                        }
+                        const price = parseFloat(parts[2]);
+                        if (isNaN(price)) {
+                            errors.push(`Line ${index + 1}: The price "${parts[2]}" is not a valid number.`);
+                            return;
+                        }
+                        validStocks.push({ symbol: parts[0].trim().toUpperCase(), name: parts[1].trim(), price: price });
+                    });
+                } else {
+                    errors.push('Unsupported file type.');
+                }
+            } catch (e) {
+                errors.push('Failed to parse file. Please check its format.');
             }
-            else if (e.target.classList.contains('delete-btn')) {
-                deletingIndex = stocks.indexOf(stock);
-                document.getElementById('deleteStockSymbol').textContent = symbol;
-                document.getElementById('deleteModal').classList.remove('hidden');
+            return { validStocks, errors };
+        }
+
+        function displayUploadPreview(result) {
+            const { validStocks, errors } = result;
+            bulkUploadPreview.innerHTML = '';
+            bulkUploadError.innerHTML = '';
+            bulkUploadError.classList.add('hidden');
+            confirmBulkUploadBtn.disabled = true;
+
+            if (errors && errors.length > 0) {
+                bulkUploadError.innerHTML = '<strong>Found issues in your file:</strong><ul class="list-disc list-inside mt-1">' + errors.map(e => `<li>${e}</li>`).join('') + '</ul>';
+                bulkUploadError.classList.remove('hidden');
             }
-            else if (e.target.classList.contains('edit-btn')) {
-                editingIndex = stocks.indexOf(stock);
-                document.getElementById('editSymbol').value = stock.symbol;
-                document.getElementById('editName').value = stock.name;
-                document.getElementById('editPrice').value = stock.price;
-                document.getElementById('editModal').classList.remove('hidden');
+
+            if (validStocks && validStocks.length > 0) {
+                parsedBulkStocks = validStocks;
+                const list = document.createElement('ul');
+                list.className = 'text-sm space-y-1';
+                validStocks.forEach(stock => {
+                    const li = document.createElement('li');
+                    li.textContent = `${stock.symbol} - ${stock.name} - $${stock.price.toFixed(2)}`;
+                    list.appendChild(li);
+                });
+                bulkUploadPreview.appendChild(list);
+                confirmBulkUploadBtn.disabled = false;
+            } else {
+                parsedBulkStocks = [];
+                if (!errors || errors.length === 0) {
+                     bulkUploadError.textContent = 'No valid stocks found in the file or image. Please check the format and content.';
+                     bulkUploadError.classList.remove('hidden');
+                }
+            }
+            bulkUploadModal.classList.remove('hidden');
+        }
+        
+        function handleBulkUploadFile(file) {
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const extension = file.name.split('.').pop().toLowerCase();
+                const result = parseFileContent(e.target.result, extension);
+                displayUploadPreview(result);
+            };
+            reader.readAsText(file);
+            bulkUploadInput.value = ''; // Reset for re-uploading same file
+        }
+
+        // --- Table Rendering and Logic ---
+        function renderTable() {
+            stockTableBody.innerHTML = '';
+            if (filteredStocks.length === 0) {
+                 stockTableBody.innerHTML = `<tr><td colspan="7" class="text-center py-10 text-gray-500">No matching stocks found.</td></tr>`;
+                 return;
+            }
+            filteredStocks.forEach(stock => {
+                const isSelected = selectedSymbols.has(stock.symbol);
+                const row = document.createElement('tr');
+                row.className = `bg-white border-b hover:bg-gray-50 ${isSelected ? 'row-selected' : ''}`;
+                row.dataset.symbol = stock.symbol;
+
+                const changeColor = stock.change >= 0 ? 'text-green-600' : 'text-red-600';
+                
+                row.innerHTML = `
+                    <td class="px-6 py-4">
+                        <input type="checkbox" class="row-checkbox rounded" data-symbol="${stock.symbol}" ${isSelected ? 'checked' : ''}>
+                    </td>
+                    <td class="px-6 py-4 font-medium text-blue-600 whitespace-nowrap">
+                         <a href="#" class="hover:underline stock-link">${stock.symbol}</a>
+                    </td>
+                    <td class="px-6 py-4">${stock.name}</td>
+                    <td class="px-6 py-4 text-center font-medium">${stock.price.toFixed(2)}</td>
+                    <td class="px-6 py-4 text-center ${changeColor}">${stock.change.toFixed(2)}</td>
+                    <td class="px-6 py-4 text-center ${changeColor}">${stock.changePercent}</td>
+                    <td class="px-6 py-4 text-center">
+                        <div class="flex justify-center items-center space-x-2">
+                            <button title="AI Analyst" data-action="analyze" class="p-1 text-yellow-500 hover:text-yellow-700">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg>
+                            </button>
+                            <button title="Edit" data-action="edit" class="p-1 text-blue-500 hover:text-blue-700">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                            </button>
+                            <button title="Delete" data-action="delete" class="p-1 text-red-500 hover:text-red-700">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                            </button>
+                        </div>
+                    </td>
+                `;
+                stockTableBody.appendChild(row);
+            });
+            updateSelectAllCheckboxState();
+        }
+
+        function updateSortIndicators() {
+            document.querySelectorAll('thead th[data-sort]').forEach(th => {
+                let text = th.textContent.replace(' ▲', '').replace(' ▼', '');
+                if (th.dataset.sort === sortColumn) {
+                    text += sortDirection === 'asc' ? ' ▲' : ' ▼';
+                }
+                th.textContent = text;
+            });
+        }
+
+        function filterAndSort() {
+            const searchTerm = searchInput.value.toLowerCase();
+            filteredStocks = stocks.filter(s => s.symbol.toLowerCase().includes(searchTerm) || s.name.toLowerCase().includes(searchTerm));
+            
+            filteredStocks.sort((a, b) => {
+                let valA = a[sortColumn], valB = b[sortColumn];
+                if (['price', 'change'].includes(sortColumn)) {
+                    valA = (typeof valA === 'number') ? valA : -Infinity;
+                    valB = (typeof valB === 'number') ? valB : -Infinity;
+                }
+                if (valA > valB) return sortDirection === 'asc' ? 1 : -1;
+                if (valA < valB) return sortDirection === 'asc' ? -1 : 1;
+                return 0;
+            });
+
+            updateSortIndicators();
+            renderTable();
+        }
+        
+        // --- Selection and Export Logic ---
+        function updateSelectionActionButtons() {
+            const hasSelection = selectedSymbols.size > 0;
+            exportBtn.classList.toggle('hidden', !hasSelection);
+            deleteSelectedBtn.classList.toggle('hidden', !hasSelection);
+        }
+
+        function updateSelectAllCheckboxState() {
+            const filteredSymbols = filteredStocks.map(s => s.symbol);
+            const allVisibleSelected = filteredSymbols.length > 0 && filteredSymbols.every(s => selectedSymbols.has(s));
+            selectAllCheckbox.checked = allVisibleSelected;
+        }
+        
+        function getStockLink(symbol) {
+             const exchange = (symbol.length <= 3 || symbol.includes('.')) ? 'NYSE' : 'NASDAQ';
+             return `https://www.google.com/finance/quote/${symbol}:${exchange}`;
+        }
+        
+        // --- Event Listeners ---
+        function handleImageFile(file) {
+             if (file && file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                    extractStockInfoFromImage(reader.result.replace('data:', '').replace(/^.+,/, ''));
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        bulkUploadBtn.addEventListener('click', () => {
+            bulkUploadInput.click();
+        });
+
+        bulkUploadInput.addEventListener('change', (e) => {
+            handleBulkUploadFile(e.target.files[0]);
+        });
+        
+        confirmBulkUploadBtn.addEventListener('click', () => {
+            if (parsedBulkStocks.length > 0) {
+                const existingSymbols = new Set(stocks.map(s => s.symbol));
+                const newStocks = parsedBulkStocks.filter(s => !existingSymbols.has(s.symbol));
+                
+                newStocks.forEach(stock => {
+                    stocks.unshift({
+                        symbol: stock.symbol,
+                        name: stock.name,
+                        price: stock.price,
+                        change: 0,
+                        changePercent: '0.00%'
+                    });
+                });
+
+                saveStocks();
+                filterAndSort();
+                bulkUploadModal.classList.add('hidden');
+                parsedBulkStocks = [];
             }
         });
 
-        // Modals & Sort
-        document.querySelectorAll('.cancel-btn, .modal-overlay').forEach(el => {
-            el.addEventListener('click', (e) => {
-                if (e.target === el || e.target.classList.contains('cancel-btn')) 
-                    document.querySelectorAll('.modal-overlay').forEach(m => m.classList.add('hidden'));
+        screenshotUploadInput.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (file && file.type.startsWith('image/')) {
+                handleImageFile(file);
+            }
+            event.target.value = '';
+        });
+        
+        screenshotLabel.addEventListener('dragover', (e) => { e.preventDefault(); screenshotLabel.classList.add('drag-over'); });
+        screenshotLabel.addEventListener('dragleave', () => { screenshotLabel.classList.remove('drag-over'); });
+        screenshotLabel.addEventListener('drop', (e) => {
+            e.preventDefault();
+            screenshotLabel.classList.remove('drag-over');
+            if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                const file = e.dataTransfer.files[0];
+
+                if (file.type.startsWith('image/')) {
+                    handleImageFile(file);
+                } else {
+                    // Show a specific error for unsupported file types
+                    bulkUploadPreview.innerHTML = '';
+                    bulkUploadError.innerHTML = '<strong>Invalid File Type</strong><p>Please drop a screenshot (.png, .jpg). For .txt or .json files, use the "Bulk Upload" button.</p>';
+                    bulkUploadError.classList.remove('hidden');
+                    confirmBulkUploadBtn.disabled = true;
+                    bulkUploadModal.classList.remove('hidden');
+                }
+                e.dataTransfer.clearData();
+            }
+        });
+
+        tableHeader.addEventListener('click', (e) => {
+            const th = e.target.closest('th');
+            if (th && th.dataset.sort) {
+                const key = th.dataset.sort;
+                if (sortColumn === key) {
+                    sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+                } else {
+                    sortColumn = key;
+                    sortDirection = 'asc';
+                }
+                filterAndSort();
+            }
+        });
+        
+        selectAllCheckbox.addEventListener('change', () => {
+            const filteredSymbols = filteredStocks.map(s => s.symbol);
+            if (selectAllCheckbox.checked) {
+                filteredSymbols.forEach(symbol => selectedSymbols.add(symbol));
+            } else {
+                filteredSymbols.forEach(symbol => selectedSymbols.delete(symbol));
+            }
+            updateSelectionActionButtons();
+            renderTable();
+        });
+
+        stockTableBody.addEventListener('click', e => {
+            const checkbox = e.target.closest('input.row-checkbox');
+            const button = e.target.closest('button[data-action]');
+            const link = e.target.closest('a.stock-link');
+            const row = e.target.closest('tr');
+            if (!row) return;
+
+            const symbol = row.dataset.symbol;
+            const stock = stocks.find(s => s.symbol === symbol);
+            const originalIndex = stocks.findIndex(s => s.symbol === symbol);
+            if (!stock) return;
+            
+            if (checkbox) {
+                if (checkbox.checked) {
+                    selectedSymbols.add(symbol);
+                } else {
+                    selectedSymbols.delete(symbol);
+                }
+                row.classList.toggle('row-selected', checkbox.checked);
+                updateSelectionActionButtons();
+                updateSelectAllCheckboxState();
+                return; // Prevent other actions when clicking checkbox
+            }
+
+            if (button) {
+                 const action = button.dataset.action;
+                 if (action === 'analyze') {
+                    analyzingStock = stock;
+                    analystStockSymbol.textContent = stock.symbol;
+                    chatHistory.innerHTML = '<div class="ai-message chat-message">Hello! I\'m your AI Analyst. Select a topic below and I\'ll find the latest information for you.</div>';
+                    analystModal.classList.remove('hidden');
+                } else if (action === 'edit') {
+                    editingStockIndex = originalIndex;
+                    document.getElementById('editSymbol').value = stock.symbol;
+                    document.getElementById('editName').value = stock.name;
+                    document.getElementById('editPrice').value = stock.price;
+                    editModal.classList.remove('hidden');
+                } else if (action === 'delete') {
+                    deletingStockIndex = originalIndex;
+                    document.getElementById('deleteStockSymbol').textContent = stock.symbol;
+                    deleteModal.classList.remove('hidden');
+                }
+            } else if (link) {
+                 e.preventDefault();
+                 window.open(getStockLink(symbol), '_blank');
+            }
+        });
+
+        analystForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const selectedOption = analystQuestionSelect.options[analystQuestionSelect.selectedIndex];
+            const queryType = selectedOption.value;
+            const queryText = selectedOption.textContent;
+
+            if (queryType && analyzingStock) {
+                appendMessage(queryText, 'user');
+                let fullQuery = '';
+                switch (queryType) {
+                    case 'revenue':
+                        fullQuery = `What was the latest reported annual revenue for ${analyzingStock.name} (${analyzingStock.symbol})? Please provide the amount and the fiscal year.`;
+                        break;
+                    case 'profit':
+                        fullQuery = `What was the latest reported annual net profit for ${analyzingStock.name} (${analyzingStock.symbol})? Please provide the amount and the fiscal year.`;
+                        break;
+                    case 'announcement':
+                        fullQuery = `What was the last major news or announcement that caused the biggest price shift (up or down) for ${analyzingStock.name} (${analyzingStock.symbol}) in the past year? Briefly explain the event and its impact.`;
+                        break;
+                }
+                getAIAnalysis(analyzingStock, fullQuery);
+                chatHistory.scrollTop = chatHistory.scrollHeight;
+            }
+        });
+        
+        addStockBtn.addEventListener('click', () => addModal.classList.remove('hidden'));
+        
+        // Settings listeners
+        settingsBtn.addEventListener('click', () => {
+             apiKeyInput.value = apiKey; // Pre-fill with existing key
+             settingsModal.classList.remove('hidden');
+        });
+        saveApiKeyBtn.addEventListener('click', saveApiKey);
+
+
+        // Close modals logic
+        document.querySelectorAll('.modal-overlay').forEach(modal => {
+            modal.addEventListener('click', e => {
+                if (e.target === modal || e.target.classList.contains('cancel-btn')) {
+                    modal.classList.add('hidden');
+                }
             });
         });
 
-        document.querySelector('thead').addEventListener('click', (e) => {
-            if(e.target.dataset.sort) {
-                if(sortColumn === e.target.dataset.sort) sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
-                else { sortColumn = e.target.dataset.sort; sortDirection = 'asc'; }
+        addForm.addEventListener('submit', e => {
+            e.preventDefault();
+            const symbol = document.getElementById('addSymbol').value.toUpperCase();
+            const name = document.getElementById('addName').value;
+            const price = parseFloat(document.getElementById('addPrice').value);
+            if (symbol && name && !isNaN(price)) {
+                stocks.unshift({ symbol, name, price, change: 0, changePercent: '0.00%' });
+                saveStocks();
+                addModal.classList.add('hidden');
+                addForm.reset();
+                filterAndSort(); 
+            }
+        });
+        
+        editForm.addEventListener('submit', e => {
+            e.preventDefault();
+            if (editingStockIndex !== null) {
+                const stockToEdit = stocks[editingStockIndex];
+                if (stockToEdit) {
+                    const newSymbol = document.getElementById('editSymbol').value.toUpperCase();
+                    const newName = document.getElementById('editName').value;
+                    const newPrice = parseFloat(document.getElementById('editPrice').value);
+                    
+                    const originalPrice = stockToEdit.price;
+                     if (typeof originalPrice === 'number' && !isNaN(originalPrice) && originalPrice !== 0 && newPrice !== originalPrice) {
+                        stockToEdit.change = newPrice - originalPrice;
+                        stockToEdit.changePercent = ((stockToEdit.change / originalPrice) * 100).toFixed(2) + '%';
+                    }
+                    stockToEdit.symbol = newSymbol;
+                    stockToEdit.name = newName;
+                    stockToEdit.price = newPrice;
+                    saveStocks();
+                }
+                editModal.classList.add('hidden');
+                editingStockIndex = null;
                 filterAndSort();
             }
         });
 
-        // Search
-        document.getElementById('searchInput').addEventListener('input', filterAndSort);
-        document.getElementById('clearSearchBtn').addEventListener('click', () => {
-            document.getElementById('searchInput').value = '';
+        confirmDeleteBtn.addEventListener('click', () => {
+             if (deletingStockIndex !== null) {
+                stocks.splice(deletingStockIndex, 1);
+                saveStocks();
+                deleteModal.classList.add('hidden');
+                deletingStockIndex = null;
+                filterAndSort(); 
+             }
+        });
+        
+        deleteSelectedBtn.addEventListener('click', () => {
+            document.getElementById('bulkDeleteCount').textContent = selectedSymbols.size;
+            bulkDeleteModal.classList.remove('hidden');
+        });
+
+        confirmBulkDeleteBtn.addEventListener('click', () => {
+            stocks = stocks.filter(stock => !selectedSymbols.has(stock.symbol));
+            selectedSymbols.clear();
+            saveStocks();
+            bulkDeleteModal.classList.add('hidden');
+            filterAndSort();
+            updateSelectionActionButtons();
+            updateSelectAllCheckboxState();
+        });
+
+        // Search input logic
+        searchInput.addEventListener('input', () => {
+            clearSearchBtn.classList.toggle('hidden', searchInput.value.length === 0);
             filterAndSort();
         });
+        clearSearchBtn.addEventListener('click', () => {
+            searchInput.value = '';
+            clearSearchBtn.classList.add('hidden');
+            filterAndSort();
+            searchInput.focus();
+        });
 
-        // Add/Edit/Delete Logic
-        document.getElementById('addForm').addEventListener('submit', (e) => {
-            e.preventDefault();
-            stocks.unshift({
-                symbol: document.getElementById('addSymbol').value.toUpperCase(),
-                name: document.getElementById('addName').value,
-                price: parseFloat(document.getElementById('addPrice').value),
-                change: 0, changePercent: '0%'
+        // Export logic
+        exportBtn.addEventListener('click', () => {
+            let exportText = 'Symbol\tName\tPrice\tLink\n';
+            selectedSymbols.forEach(symbol => {
+                const stock = stocks.find(s => s.symbol === symbol);
+                if(stock) {
+                    exportText += `${stock.symbol}\t${stock.name}\t${stock.price.toFixed(2)}\t${getStockLink(stock.symbol)}\n`;
+                }
             });
-            saveStocks(); filterAndSort();
-            document.getElementById('addModal').classList.add('hidden');
-            e.target.reset();
+            document.getElementById('exportData').value = exportText;
+            exportModal.classList.remove('hidden');
+        });
+        
+        copyExportBtn.addEventListener('click', () => {
+            const exportData = document.getElementById('exportData');
+            exportData.select();
+            document.execCommand('copy');
+            copyExportBtn.textContent = 'Copied!';
+            setTimeout(() => { copyExportBtn.textContent = 'Copy to Clipboard'; }, 2000);
         });
 
-        document.getElementById('editForm').addEventListener('submit', (e) => {
-            e.preventDefault();
-            if(editingIndex !== null) {
-                stocks[editingIndex].symbol = document.getElementById('editSymbol').value.toUpperCase();
-                stocks[editingIndex].name = document.getElementById('editName').value;
-                stocks[editingIndex].price = parseFloat(document.getElementById('editPrice').value);
-                saveStocks(); filterAndSort();
-                document.getElementById('editModal').classList.add('hidden');
-            }
-        });
-
-        document.getElementById('confirmDeleteBtn').addEventListener('click', () => {
-            if(deletingIndex !== null) {
-                stocks.splice(deletingIndex, 1);
-                saveStocks(); filterAndSort();
-                document.getElementById('deleteModal').classList.add('hidden');
-            }
-        });
-
-        document.getElementById('selectAllCheckbox').addEventListener('change', (e) => {
-            if(e.target.checked) filteredStocks.forEach(s => selectedSymbols.add(s.symbol));
-            else filteredStocks.forEach(s => selectedSymbols.delete(s.symbol));
-            renderTable();
-        });
-
-        // Bulk Actions
-        document.getElementById('confirmBulkUploadBtn').addEventListener('click', () => {
-             // Basic de-dupe
-             const existing = new Set(stocks.map(s => s.symbol));
-             const newOnes = parsedBulkStocks.filter(s => !existing.has(s.symbol));
-             stocks = [...newOnes, ...stocks];
-             saveStocks(); filterAndSort();
-             document.getElementById('bulkUploadModal').classList.add('hidden');
-        });
-
-        document.getElementById('deleteSelectedBtn').addEventListener('click', () => {
-            document.getElementById('bulkDeleteCount').textContent = selectedSymbols.size;
-            document.getElementById('bulkDeleteModal').classList.remove('hidden');
-        });
-
-        document.getElementById('confirmBulkDeleteBtn').addEventListener('click', () => {
-            stocks = stocks.filter(s => !selectedSymbols.has(s.symbol));
-            selectedSymbols.clear();
-            saveStocks(); filterAndSort();
-            document.getElementById('bulkDeleteModal').classList.add('hidden');
-        });
-
-        // Drag & Drop
-        const dropZone = document.getElementById('screenshotLabel');
-        dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
-        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
-        dropZone.addEventListener('drop', e => {
-            e.preventDefault(); dropZone.classList.remove('drag-over');
-            if(e.dataTransfer.files.length) handleImage(e.dataTransfer.files[0]);
-        });
-
-        // Init
-        loadStocks();
-        document.getElementById('last-updated-container').textContent = `Prices as of: ${new Date().toLocaleDateString()}`;
-        filterAndSort();
+        // --- Initial App Start ---
+        function init() {
+            initApiKey();
+            loadStocks();
+            lastUpdatedContainer.textContent = `Prices as of: ${new Date().toLocaleDateString()}`;
+            filterAndSort();
+        }
+        
+        init();
     });
     </script>
 </body>
 </html>
+
+
