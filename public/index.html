@@ -495,7 +495,7 @@
             const reader = new FileReader();
             reader.onloadend = async () => {
                 const base64 = reader.result.split(',')[1];
-                const prompt = "Extract stocks from this image. Return strictly valid JSON array of objects with keys: symbol, name, price (number). No markdown.";
+                const prompt = `Analyze the provided screenshot of a stock watchlist or financial website. Extract ALL stock symbols, company names, and their current prices. Return a JSON array of objects, where each object has keys: "symbol", "name", and "price". The price should be a number. If no stocks are found, return an empty array. ONLY return valid JSON. Do not include markdown code blocks.`;
                 
                 const jsonStr = await callBackendAPI(prompt, base64);
                 document.getElementById('loadingModal').classList.add('hidden');
