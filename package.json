@@ -1,15 +1,7 @@
 {
   "name": "ai-stock-watchlist",
   "version": "1.0.0",
-  "description": "Stock watchlist with Gemini AI analysis",
-  "type": "module",
-  "scripts": {
-    "start": "node api/generate.js"
-  },
   "dependencies": {
     "@google/generative-ai": "^0.21.0"
-  },
-  "engines": {
-    "node": "24.x"
   }
 }
