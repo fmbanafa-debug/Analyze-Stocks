@@ -10,7 +10,7 @@ export default async function handler(request, response) {
   try {
     const { image } = request.body; // Expecting base64 string
 
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-001" });
+    const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
 
     const prompt = `Analyze this image of a stock list. Extract stock symbols, names, and prices. 
     Return a JSON array ONLY, like: [{"symbol": "AAPL", "name": "Apple", "price": 150.00}].
