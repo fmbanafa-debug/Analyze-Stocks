@@ -11,7 +11,7 @@ export default async function handler(request, response) {
     const { symbol, name, userQuery } = request.body;
 
     // Use the Flash model for speed and cost
-    const model = genAI.getGenerativeModel({ model: "gemin-flash-latest" });
+    const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
     
     const prompt = `You are a financial analyst. Analyze ${name} (${symbol}). 
     User Question: ${userQuery}
